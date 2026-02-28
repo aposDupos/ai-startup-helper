@@ -14,6 +14,7 @@ import { executeEvaluateICE } from "@/lib/ai/tools/evaluate-ice";
 import { executeCreateProject } from "@/lib/ai/tools/create-project";
 import { executeCompleteChecklist } from "@/lib/ai/tools/complete-checklist";
 import { executeReopenStage } from "@/lib/ai/tools/reopen-stage";
+import { executeUpdateProjectArtifacts } from "@/lib/ai/tools/update-project-artifacts";
 import type { StageKey } from "@/types/project";
 
 // ---------------------------------------------------------------------------
@@ -152,6 +153,42 @@ const GIGACHAT_FUNCTIONS = [
             required: ["projectId", "stage"],
         },
     },
+    {
+        name: "update_project_artifacts",
+        description:
+            "Сохраняет важную информацию из диалога в проект пользователя. ОБЯЗАТЕЛЬНО вызывай когда пользователь сформулировал: проблему, целевую аудиторию, гипотезы, уникальное предложение, результаты CustDev, описание MVP-фич, конкурентов или модель монетизации.",
+        parameters: {
+            type: "object",
+            properties: {
+                projectId: {
+                    type: "string",
+                    description: "UUID проекта пользователя",
+                },
+                field: {
+                    type: "string",
+                    enum: [
+                        "problem",
+                        "target_audience",
+                        "idea_formulation",
+                        "hypotheses",
+                        "unique_value",
+                        "custdev_results",
+                        "competitors",
+                        "revenue_model",
+                        "mvp_features",
+                    ],
+                    description:
+                        "Тип артефакта: problem (проблема), target_audience (ЦА), idea_formulation (формулировка идеи), hypotheses (гипотеза — добавляется в список), unique_value (ценностное предложение), custdev_results (результаты CustDev), competitors (конкуренты), revenue_model (модель монетизации), mvp_features (фичи MVP)",
+                },
+                value: {
+                    type: "string",
+                    description:
+                        "Содержание артефакта — сжатая формулировка того, что обсудили с пользователем",
+                },
+            },
+            required: ["projectId", "field", "value"],
+        },
+    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -211,6 +248,14 @@ async function executeTool(
                 });
                 return { toolName, result };
             }
+            case "update_project_artifacts": {
+                const result = await executeUpdateProjectArtifacts({
+                    projectId: args.projectId as string,
+                    field: args.field as string,
+                    value: args.value as string,
+                });
+                return { toolName, result };
+            }
             default:
                 return { toolName, result: { error: `Unknown tool: ${toolName}` } };
         }
@@ -254,12 +299,13 @@ export async function runAgentStreaming(
     contextType: StageContext,
     userRole: UserRole,
     userId: string,
-    projectContext?: import("@/lib/ai/prompts").ProjectContext | null
+    projectContext?: import("@/lib/ai/prompts").ProjectContext | null,
+    ragContext?: string
 ): Promise<{
     textStream: ReadableStream<string>;
     toolResultsPromise: Promise<ToolExecutionResult[]>;
 }> {
-    const systemPrompt = buildSystemPrompt(contextType, userRole, projectContext ?? null);
+    const systemPrompt = buildSystemPrompt(contextType, userRole, projectContext ?? null, ragContext);
 
     const messages = toLangChainMessages(systemPrompt, [
         ...history,

@@ -7,6 +7,7 @@ import {
 import { JourneyMap } from "@/components/project/JourneyMap";
 import { CreateProjectWidget } from "@/components/project/CreateProjectWidget";
 import { TeamSection } from "@/components/project/TeamSection";
+import { ProjectPassport } from "@/components/project/ProjectPassport";
 import { getStageChecklists, getLessonsMap } from "./actions";
 import type {
     ProgressData,
@@ -53,6 +54,8 @@ export default async function DashboardPage() {
         (activeProject?.stage as StageKey) || "idea";
     const teamMembers: TeamMember[] =
         (activeProject?.team_members as TeamMember[]) || [];
+    const projectArtifacts: Record<string, unknown> =
+        (activeProject?.artifacts as Record<string, unknown>) || {};
 
     return (
         <div className="space-y-6">
@@ -78,6 +81,12 @@ export default async function DashboardPage() {
                         checklists={checklists}
                         lessons={lessonsMap}
                         completedLessonIds={completedLessonIds}
+                    />
+
+                    {/* Project Passport */}
+                    <ProjectPassport
+                        artifacts={projectArtifacts}
+                        currentStage={currentStage}
                     />
 
                     {/* AI Recommendation + Team row */}

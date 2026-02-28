@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAgentStreaming, type GigaChatMessageInput } from "@/lib/ai/agents/router";
 import { logAICall } from "@/lib/ai/observability";
+import { searchKnowledge, formatRAGContext } from "@/lib/ai/rag/search";
 import type { StageContext, UserRole, ProjectContext } from "@/lib/ai/prompts";
 import type { ProgressData } from "@/types/project";
 
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
 
     const { data: activeProject } = await supabase
         .from("projects")
-        .select("id, title, description, stage, progress_data")
+        .select("id, title, description, stage, progress_data, artifacts")
         .eq("owner_id", user.id)
         .eq("is_active", true)
         .single();
@@ -92,7 +93,19 @@ export async function POST(req: Request) {
             completedItems,
             totalItems: allItemKeys.length,
             remainingItems: remainingLabels,
+            artifacts: (activeProject.artifacts as Record<string, unknown>) || undefined,
         };
+    }
+
+    // 3c. RAG — search knowledge base for relevant context
+    let ragContext: string | undefined;
+    try {
+        const knowledgeChunks = await searchKnowledge(message, 3);
+        if (knowledgeChunks.length > 0) {
+            ragContext = formatRAGContext(knowledgeChunks);
+        }
+    } catch (err) {
+        console.error("[Chat] RAG search failed (continuing without context):", err);
     }
 
     // 4. Get or create conversation
@@ -153,7 +166,8 @@ export async function POST(req: Request) {
             contextType as StageContext,
             userRole,
             user.id,
-            projectContext
+            projectContext,
+            ragContext
         );
 
         // Create SSE response stream

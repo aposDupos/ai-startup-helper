@@ -29,7 +29,7 @@ export function createGigaChatModel(options?: {
 }) {
     return new GigaChat({
         credentials: process.env.GIGACHAT_API_KEY,
-        model: options?.model ?? "GigaChat",
+        model: options?.model ?? "GigaChat-Pro",
         temperature: options?.temperature ?? 0.7,
         maxTokens: options?.maxTokens ?? 2048,
         streaming: options?.streaming ?? true,

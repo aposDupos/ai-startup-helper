@@ -44,14 +44,54 @@ description: How to execute development tasks from the sprint backlog. Use when 
 
 10. If executing a full sprint, work through tasks **in order** (they are dependency-sorted).
 
+## Database & Infrastructure (do it yourself!)
+
+> **CRITICAL**: Always handle database operations yourself. Never leave them as "manual steps" for the user.
+
+### Migrations
+11. If a task requires a SQL migration:
+    - Write the `.sql` file to `supabase/migrations/`
+    - **Apply it immediately** via `mcp_supabase-mcp-server_apply_migration` tool
+    - Supabase project ID: `oefchksvlfercftztfkn`
+    - Verify the migration applied successfully
+
+### Seed Data
+12. If a task requires seeding data:
+    - Write a seed script to `scripts/` (optional, for documentation)
+    - **Execute the SQL directly** via `mcp_supabase-mcp-server_execute_sql` tool
+    - Do NOT rely on `npx tsx scripts/seed-*.ts` — there is no `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`
+    - Always verify the data was inserted: `SELECT count(*) FROM ...`
+
+### RPC Functions
+13. If a task requires Postgres functions/RPCs:
+    - Apply via `mcp_supabase-mcp-server_apply_migration` with a descriptive name
+    - Example: `increment_xp`, `check_achievement`, etc.
+
+### Dependencies
+14. If new npm packages are needed:
+    - Install via `npm install <package>` immediately
+    - Don't just list them — run the install command
+
 ## After Completing
 
-11. Run verification commands listed in the task (if any): lint, type-check, build, tests.
+15. Run `npx next build` to verify everything compiles.
 
-12. Notify the user with a summary of what was done and which tasks are completed.
+16. Cross-check ALL acceptance criteria from the task — don't just check file creation, verify integration too (e.g., components wired into pages, data flowing through props).
+
+17. Notify the user with:
+    - Summary of completed tasks
+    - How users navigate to new features
+    - Any follow-up recommendations
 
 ## Task ID Format
 
 - `S01-001` = Sprint 01, Task 001
 - `S02-005` = Sprint 02, Task 005
 - Tasks are numbered within each sprint as 3-digit IDs
+
+## Supabase Quick Reference
+
+- **Project ID**: `oefchksvlfercftztfkn`
+- **Migrations tool**: `mcp_supabase-mcp-server_apply_migration`
+- **SQL tool**: `mcp_supabase-mcp-server_execute_sql`
+- **No service role key** in `.env.local` — always use MCP tools for admin operations

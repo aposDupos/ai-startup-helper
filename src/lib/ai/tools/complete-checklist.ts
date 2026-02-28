@@ -6,6 +6,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { StageKey, ProgressData } from "@/types/project";
 import { getNextStage } from "@/types/project";
+import { gamificationAction } from "@/lib/gamification/check-after-action";
 
 export interface CompleteChecklistInput {
     projectId: string;
@@ -18,6 +19,9 @@ export interface CompleteChecklistResult {
     completedItems?: string[];
     stageAdvanced?: boolean;
     newStage?: string;
+    xpGained?: number;
+    leveledUp?: boolean;
+    newLevel?: number;
     error?: string;
 }
 
@@ -51,6 +55,10 @@ export async function executeCompleteChecklist(
 ): Promise<CompleteChecklistResult> {
     try {
         const supabase = await createClient();
+
+        // Get user ID for gamification
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id;
 
         const { data: project, error: fetchErr } = await supabase
             .from("projects")
@@ -114,11 +122,37 @@ export async function executeCompleteChecklist(
 
         if (updateErr) throw updateErr;
 
+        // Award XP for checklist item completion
+        let xpGained = 0;
+        let leveledUp = false;
+        let resultLevel = 0;
+        if (userId) {
+            const itemResult = await gamificationAction(
+                userId, 15, "checklist", input.itemKey, "Checklist item completed"
+            );
+            xpGained = 15;
+            leveledUp = itemResult.xpResult.leveledUp;
+            resultLevel = itemResult.xpResult.newLevel;
+
+            // Bonus XP for completing entire stage
+            if (allDone) {
+                const stageResult = await gamificationAction(
+                    userId, 50, "stage_complete", input.stage, `Stage ${input.stage} completed`
+                );
+                xpGained += 50;
+                leveledUp = leveledUp || stageResult.xpResult.leveledUp;
+                resultLevel = stageResult.xpResult.newLevel;
+            }
+        }
+
         return {
             success: true,
             completedItems: stageProgress.completedItems,
             stageAdvanced,
             newStage: stageAdvanced ? (newStage ?? undefined) : undefined,
+            xpGained,
+            leveledUp,
+            newLevel: resultLevel || undefined,
         };
     } catch (err) {
         console.error("[CompleteChecklistTool] Error:", err);

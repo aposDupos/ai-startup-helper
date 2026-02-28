@@ -8,6 +8,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { executeCompleteChecklist } from "./complete-checklist";
 import type { StageKey } from "@/types/project";
+import { gamificationAction } from "@/lib/gamification/check-after-action";
 
 export interface UpdateProjectArtifactsInput {
     projectId: string;
@@ -41,6 +42,10 @@ export async function executeUpdateProjectArtifacts(
 ): Promise<UpdateProjectArtifactsResult> {
     try {
         const supabase = await createClient();
+
+        // Get user ID for gamification
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id;
 
         // Get current artifacts
         const { data: project, error: fetchErr } = await supabase
@@ -97,6 +102,13 @@ export async function executeUpdateProjectArtifacts(
                 checklistError = err instanceof Error ? err.message : "Unknown checklist error";
                 console.error("[UpdateArtifacts] Checklist auto-complete exception:", err);
             }
+        }
+
+        // Award XP for saving artifact
+        if (userId) {
+            await gamificationAction(
+                userId, 10, "artifact", input.field, "Artifact saved"
+            );
         }
 
         return {

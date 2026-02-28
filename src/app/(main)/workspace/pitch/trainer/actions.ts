@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { PitchDeckSlides, TrainingRound, TrainingResults, TrainingCriterion } from "@/types/pitch";
 import { TRAINING_CRITERIA } from "@/types/pitch";
 import { createGigaChatModelSync } from "@/lib/ai/config";
+import { gamificationAction } from "@/lib/gamification/check-after-action";
 
 // ---------------------------------------------------------------------------
 // Start training — first investor question
@@ -106,6 +107,9 @@ export async function generateFeedback(
 ) {
     const supabase = await createClient();
 
+    // Get user for gamification
+    const { data: { user } } = await supabase.auth.getUser();
+
     const { data: project } = await supabase
         .from("projects")
         .select("title")
@@ -177,6 +181,13 @@ ${history}
                         updated_at: new Date().toISOString(),
                     })
                     .eq("id", deck.id);
+            }
+
+            // Award XP for pitch training session
+            if (user) {
+                await gamificationAction(
+                    user.id, 30, "pitch_training", projectId, "Pitch training completed"
+                );
             }
 
             return results;

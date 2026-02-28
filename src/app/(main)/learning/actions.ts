@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { gamificationAction } from "@/lib/gamification/check-after-action";
 
 /**
  * Mark a lesson as completed and store the quiz score.
@@ -29,14 +30,25 @@ export async function completeLessonProgress(
 
     if (error) throw error;
 
-    // Award XP for lesson completion
-    const xpGained = score >= 70 ? 50 : 25; // more XP for good scores
-    await supabase.rpc("increment_xp", {
-        user_id_param: user.id,
-        xp_amount: xpGained,
-    });
+    // Award XP for lesson completion + check achievements
+    const xpAmount = score >= 70 ? 50 : 25; // more XP for good scores
+    const { xpResult, unlockedAchievements } = await gamificationAction(
+        user.id,
+        xpAmount,
+        "lesson",
+        lessonId,
+        "Lesson completed"
+    );
 
-    return { xpGained };
+    return {
+        xpGained: xpAmount,
+        leveledUp: xpResult.leveledUp,
+        newLevel: xpResult.newLevel,
+        unlockedAchievements: unlockedAchievements.map((a) => ({
+            title: a.title,
+            icon: a.icon,
+        })),
+    };
 }
 
 /**

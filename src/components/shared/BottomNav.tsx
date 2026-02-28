@@ -7,7 +7,7 @@ import {
     MessageCircle,
     Wrench,
     BookOpen,
-    User,
+    Award,
 } from "lucide-react";
 
 const navItems = [
@@ -15,7 +15,7 @@ const navItems = [
     { href: "/chat", label: "Chat", icon: MessageCircle },
     { href: "/workspace", label: "Work", icon: Wrench },
     { href: "/learning", label: "Learning", icon: BookOpen },
-    { href: "/profile", label: "Profile", icon: User },
+    { href: "/gamification", label: "Достижения", icon: Award },
 ];
 
 export function BottomNav() {

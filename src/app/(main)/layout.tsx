@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/shared/Sidebar";
 import { BottomNav } from "@/components/shared/BottomNav";
+import { updateStreak } from "@/lib/gamification/streaks";
+import { GamificationProvider } from "@/contexts/GamificationContext";
 
 export default async function MainLayout({
     children,
@@ -28,22 +30,36 @@ export default async function MainLayout({
         redirect("/onboarding");
     }
 
+    // Update streak on every page load (SSR) — idempotent per day
+    const streakResult = await updateStreak(user.id);
+
     const userProfile = {
         displayName: profile?.display_name || user.email?.split("@")[0] || "Пользователь",
         level: profile?.level ?? 1,
         xp: profile?.xp ?? 0,
-        streakCount: profile?.streak_count ?? 0,
+        streakCount: streakResult.streakCount,
     };
 
+    // Initial gamification events for client-side toast
+    const initialEvents = streakResult.isNewDay
+        ? {
+            xpGained: streakResult.xpBonus,
+            streakCount: streakResult.streakCount,
+            milestoneReached: streakResult.milestoneReached,
+        }
+        : null;
+
     return (
-        <div className="min-h-screen bg-surface-50">
-            <Sidebar userProfile={userProfile} />
-            <main className="md:ml-[240px] pb-20 md:pb-0">
-                <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8">
-                    {children}
-                </div>
-            </main>
-            <BottomNav />
-        </div>
+        <GamificationProvider initialEvents={initialEvents}>
+            <div className="min-h-screen bg-surface-50">
+                <Sidebar userProfile={userProfile} />
+                <main className="md:ml-[240px] pb-20 md:pb-0">
+                    <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8">
+                        {children}
+                    </div>
+                </main>
+                <BottomNav />
+            </div>
+        </GamificationProvider>
     );
 }

@@ -8,6 +8,7 @@ import {
     Wrench,
     BookOpen,
     Trophy,
+    Award,
 } from "lucide-react";
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
     { href: "/chat", label: "AI-наставник", icon: MessageCircle },
     { href: "/workspace", label: "Workspace", icon: Wrench },
     { href: "/learning", label: "Learning", icon: BookOpen },
+    { href: "/gamification", label: "Достижения", icon: Award },
     { href: "/leaderboard", label: "Лидерборд", icon: Trophy },
 ];
 

@@ -31,9 +31,11 @@ export interface Lesson {
     id: string;
     stage: StageKey;
     title: string;
+    type: "micro" | "full";
     content: LessonContentBlock[];
     quiz: QuizQuestion[];
     duration_min: number;
+    estimated_minutes: number;
     audience: "all" | "school" | "university";
     sort_order: number;
     created_at: string;

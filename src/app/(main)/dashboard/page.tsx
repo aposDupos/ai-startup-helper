@@ -8,7 +8,9 @@ import { JourneyMap } from "@/components/project/JourneyMap";
 import { CreateProjectWidget } from "@/components/project/CreateProjectWidget";
 import { TeamSection } from "@/components/project/TeamSection";
 import { ProjectPassport } from "@/components/project/ProjectPassport";
+import { MicroLessonCard } from "@/components/learning/MicroLessonCard";
 import { getStageChecklists, getLessonsMap } from "./actions";
+import { getRandomMicroLesson } from "@/app/(main)/learning/actions";
 import type {
     ProgressData,
     StageKey,
@@ -47,6 +49,9 @@ export default async function DashboardPage() {
         lessonsMap = lessonsData.lessons;
         completedLessonIds = lessonsData.completedIds;
     }
+
+    // Micro lesson for dashboard
+    const microLesson = await getRandomMicroLesson();
 
     const progressData: ProgressData =
         (activeProject?.progress_data as ProgressData) || {};
@@ -108,6 +113,20 @@ export default async function DashboardPage() {
                             initialMembers={teamMembers}
                         />
                     </div>
+
+                    {/* Micro-lesson of the day */}
+                    {microLesson && (
+                        <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-lg">📖</span>
+                                <h3 className="text-h4 text-surface-900">Мини-урок дня</h3>
+                            </div>
+                            <MicroLessonCard
+                                lesson={microLesson}
+                                isCompleted={false}
+                            />
+                        </div>
+                    )}
 
                     {/* XP + Streak row */}
                     <div className="grid md:grid-cols-2 gap-4">

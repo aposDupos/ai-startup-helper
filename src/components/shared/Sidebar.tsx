@@ -12,7 +12,7 @@ import {
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/mentor", label: "AI-наставник", icon: MessageCircle },
+    { href: "/chat", label: "AI-наставник", icon: MessageCircle },
     { href: "/workspace", label: "Workspace", icon: Wrench },
     { href: "/academy", label: "Academy", icon: BookOpen },
     { href: "/leaderboard", label: "Лидерборд", icon: Trophy },

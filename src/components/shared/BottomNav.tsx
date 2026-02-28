@@ -12,7 +12,7 @@ import {
 
 const navItems = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { href: "/mentor", label: "Chat", icon: MessageCircle },
+    { href: "/chat", label: "Chat", icon: MessageCircle },
     { href: "/workspace", label: "Work", icon: Wrench },
     { href: "/academy", label: "Academy", icon: BookOpen },
     { href: "/profile", label: "Profile", icon: User },

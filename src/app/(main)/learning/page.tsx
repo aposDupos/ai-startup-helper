@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BookOpen, Clock, Star, CheckCircle2, Sparkles } from "lucide-react";
+import { BookOpen, Clock, Star, CheckCircle2, Sparkles, ArrowLeft } from "lucide-react";
 import { getAllLessonsGrouped, getRecommendedLesson } from "./actions";
 import { MicroLessonCard } from "@/components/learning/MicroLessonCard";
+import { createClient } from "@/lib/supabase/server";
 import type { StageGroup, LessonWithProgress } from "./actions";
 
 export default async function LearningPage() {
@@ -9,8 +10,33 @@ export default async function LearningPage() {
         await getAllLessonsGrouped();
     const recommended = await getRecommendedLesson();
 
+    // Check if user has an active project (for "return to project" banner)
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    let hasProject = false;
+    if (user) {
+        const { data: project } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("owner_id", user.id)
+            .eq("is_active", true)
+            .single();
+        hasProject = !!project;
+    }
+
     return (
         <div className="space-y-8 animate-fade-in">
+            {/* Return to project banner */}
+            {hasProject && (
+                <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl border border-primary-200 bg-primary-50/50 text-primary-700 hover:bg-primary-100 transition-colors text-body-sm font-medium"
+                >
+                    <ArrowLeft size={16} strokeWidth={1.75} />
+                    После урока — вернись к проекту на Dashboard
+                </Link>
+            )}
+
             {/* Header */}
             <div>
                 <h1 className="text-h1 text-surface-900">📚 Обучение</h1>
@@ -130,17 +156,17 @@ function LessonRow({
         <Link
             href={`/learning/${lesson.id}`}
             className={`flex items-center justify-between p-4 rounded-xl border transition-all hover:shadow-md hover:-translate-y-0.5 ${isCompleted
-                    ? "border-success-500/30 bg-success-500/3"
-                    : isRecommended
-                        ? "border-primary-300 bg-primary-50/50 ring-2 ring-primary-200 ring-offset-1"
-                        : "border-surface-200 bg-surface-0"
+                ? "border-success-500/30 bg-success-500/3"
+                : isRecommended
+                    ? "border-primary-300 bg-primary-50/50 ring-2 ring-primary-200 ring-offset-1"
+                    : "border-surface-200 bg-surface-0"
                 }`}
         >
             <div className="flex items-center gap-3">
                 <div
                     className={`w-10 h-10 rounded-lg flex items-center justify-center ${isCompleted
-                            ? "bg-success-500/10"
-                            : "bg-primary-500/10"
+                        ? "bg-success-500/10"
+                        : "bg-primary-500/10"
                         }`}
                 >
                     {isCompleted ? (

@@ -5,6 +5,7 @@ import { runAgentStreaming, type GigaChatMessageInput } from "@/lib/ai/agents/ro
 import { logAICall } from "@/lib/ai/observability";
 import { searchKnowledge, formatRAGContext } from "@/lib/ai/rag/search";
 import type { StageContext, UserRole, ProjectContext } from "@/lib/ai/prompts";
+import { detectContextFromMessage } from "@/lib/ai/prompts";
 import type { ProgressData } from "@/types/project";
 
 export const runtime = "nodejs";
@@ -42,7 +43,8 @@ export async function POST(req: Request) {
         contextType: rawContextType,
     } = body;
 
-    const contextType = rawContextType || "general";
+    // contextType will be auto-detected after project is loaded (see step 3b)
+    let contextType: StageContext = rawContextType || "general";
 
     if (!message?.trim()) {
         return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -98,7 +100,19 @@ export async function POST(req: Request) {
         };
     }
 
-    // 3c. RAG — search knowledge base for relevant context
+    // 3c. Auto-route: detect context from message if not explicitly set
+    if (!rawContextType || rawContextType === "general") {
+        // Only auto-route for new conversations (first message)
+        if (!existingConversationId) {
+            contextType = detectContextFromMessage(
+                message,
+                activeProject?.stage
+            );
+            console.log(`[Chat] Auto-routed context: "${rawContextType || 'none'}" → "${contextType}"`);
+        }
+    }
+
+    // 3d. RAG — search knowledge base for relevant context
     let ragContext: string | undefined;
     try {
         const knowledgeChunks = await searchKnowledge(message, 3);

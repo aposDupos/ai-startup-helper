@@ -12,7 +12,9 @@ export type StageContext =
     | "bmc"
     | "mvp"
     | "pitch"
-    | "general";
+    | "general"
+    | "idea_evaluation"
+    | "project_assessment";
 
 // ---------------------------------------------------------------------------
 // Base rules (injected into every prompt)
@@ -283,6 +285,77 @@ ${BASE_RULES}
 `.trim();
 
 // ---------------------------------------------------------------------------
+// Entry point prompts
+// ---------------------------------------------------------------------------
+
+export const ideaEvaluationPrompt = (role: UserRole) => `
+Ты — StartupCopilot, AI-наставник. Пользователь пришёл с конкретной идеей стартапа.
+
+ТВОЯ ЗАДАЧА:
+Помочь пользователю описать идею, оценить её и создать проект.
+
+ПОШАГОВЫЙ ПЛАН:
+1. Попроси описать идею: какую проблему решает? Кто целевая аудитория? В чём уникальность?
+2. Когда идея достаточно описана — СРАЗУ создай проект:
+   - Вызови create_project_with_stage(title="...", description="...", stage="idea")
+3. Затем сохрани формулировку:
+   - Вызови update_project_artifacts(projectId=ID_из_шага_2, field="idea_formulation", value="...")
+   - Вызови update_project_artifacts(projectId=ID, field="problem", value="...")
+   - Вызови update_project_artifacts(projectId=ID, field="target_audience", value="...")
+4. Поздравь пользователя! 🎉
+5. Предложи перейти на Dashboard чтобы увидеть свой проект и чеклист.
+
+ВАЖНО:
+- НЕ задавай слишком много вопросов подряд. 2-3 вопроса максимум, потом действуй.
+- Как только есть достаточно информации — создавай проект, не жди идеального описания.
+
+${TOOL_CALLING_RULES}
+
+${ARTIFACT_SAVING_RULES}
+
+${LESSON_TIPS.idea_search}
+
+${toneAdaptation(role)}
+
+${BASE_RULES}
+`.trim();
+
+export const projectAssessmentPrompt = (role: UserRole) => `
+Ты — StartupCopilot, AI-наставник. Пользователь уже работает над проектом и хочет продолжить.
+
+ТВОЯ ЗАДАЧА:
+Определить стадию проекта через серию вопросов и создать проект на правильной стадии.
+
+ВОПРОСЫ ДЛЯ ОПРЕДЕЛЕНИЯ СТАДИИ (задавай по порядку, но не все сразу — по 1-2):
+1. "Расскажи кратко, что за проект? Какую проблему решаешь?" → записать problem + idea_formulation
+2. "Ты уже общался с потенциальными клиентами? Есть результаты CustDev?" → если да → validation+  
+3. "Есть ли бизнес-модель? Понимаешь, как будешь зарабатывать?" → если да → business_model+
+4. "У тебя есть рабочий прототип или MVP?" → если да → mvp+
+5. "Готов ли питч-дек? Общался с инвесторами?" → если да → pitch
+
+ОПРЕДЕЛЕНИЕ СТАДИИ:
+- Только идея → stage="idea"
+- Есть CustDev → stage="validation" 
+- Есть бизнес-модель → stage="business_model"
+- Есть MVP → stage="mvp"
+- Готов к питчу → stage="pitch"
+
+ПОСЛЕ ОПРЕДЕЛЕНИЯ:
+1. Вызови create_project_with_stage(title="...", description="...", stage=определённая_стадия)
+   — Предыдущие стадии автоматически отметятся как completed!
+2. Заполни известные артефакты через update_project_artifacts
+3. Поздравь и предложи перейти на Dashboard
+
+${TOOL_CALLING_RULES}
+
+${ARTIFACT_SAVING_RULES}
+
+${toneAdaptation(role)}
+
+${BASE_RULES}
+`.trim();
+
+// ---------------------------------------------------------------------------
 // Project context injection
 // ---------------------------------------------------------------------------
 
@@ -375,6 +448,8 @@ export function buildSystemPrompt(
         mvp: mvpPrompt,
         pitch: pitchPrompt,
         general: generalPrompt,
+        idea_evaluation: ideaEvaluationPrompt,
+        project_assessment: projectAssessmentPrompt,
     };
 
     const basePrompt = prompts[stage](role);
@@ -387,4 +462,93 @@ export function buildSystemPrompt(
     }
 
     return prompt;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-routing: detect context from user's first message
+// ---------------------------------------------------------------------------
+
+const CONTEXT_KEYWORDS: { context: StageContext; keywords: string[] }[] = [
+    {
+        context: "idea_search",
+        keywords: [
+            "идея", "придумать", "хочу открыть", "хочу создать", "хочу запустить",
+            "стартап", "бизнес идея", "кофейня", "приложение", "сервис",
+            "как найти идею", "что можно запустить", "хочу начать",
+        ],
+    },
+    {
+        context: "validation",
+        keywords: [
+            "валидация", "custdev", "кастдев", "гипотез", "проверить идею",
+            "клиент", "интервью", "исследование рынка", "целевая аудитория",
+        ],
+    },
+    {
+        context: "bmc",
+        keywords: [
+            "bmc", "канвас", "business model", "бизнес-модель", "бизнес модель",
+            "монетизац", "юнит-экономик", "unit economics", "как зарабатывать",
+        ],
+    },
+    {
+        context: "mvp",
+        keywords: [
+            "mvp", "прототип", "минимальный продукт", "запуск", "лендинг",
+            "no-code", "ноукод", "как сделать продукт",
+        ],
+    },
+    {
+        context: "pitch",
+        keywords: [
+            "питч", "инвестор", "презентац", "pitch", "питч-дек",
+            "фандрайзинг", "раунд", "акселератор",
+        ],
+    },
+];
+
+/**
+ * Detect the most appropriate StageContext from the user's first message.
+ * Falls back to project stage if available, otherwise "general".
+ */
+export function detectContextFromMessage(
+    message: string,
+    projectStage?: string | null
+): StageContext {
+    const lower = message.toLowerCase();
+
+    // Score each context by keyword matches
+    let bestContext: StageContext | null = null;
+    let bestScore = 0;
+
+    for (const { context, keywords } of CONTEXT_KEYWORDS) {
+        let score = 0;
+        for (const kw of keywords) {
+            if (lower.includes(kw.toLowerCase())) {
+                score++;
+            }
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestContext = context;
+        }
+    }
+
+    if (bestContext && bestScore > 0) {
+        return bestContext;
+    }
+
+    // Fall back to project stage
+    if (projectStage) {
+        const stageMap: Record<string, StageContext> = {
+            idea: "idea_search",
+            validation: "validation",
+            business_model: "bmc",
+            mvp: "mvp",
+            pitch: "pitch",
+        };
+        return stageMap[projectStage] || "general";
+    }
+
+    return "general";
 }

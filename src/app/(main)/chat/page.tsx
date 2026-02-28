@@ -7,7 +7,11 @@ export const metadata = {
     description: "Твой AI-наставник для стартапа. Поиск идеи, валидация, бизнес-модель, MVP и питч.",
 };
 
-export default async function ChatPage() {
+interface ChatPageProps {
+    searchParams: Promise<{ context?: string }>;
+}
+
+export default async function ChatPage({ searchParams }: ChatPageProps) {
     const supabase = await createClient();
 
     const {
@@ -16,6 +20,15 @@ export default async function ChatPage() {
 
     if (!user) {
         redirect("/login");
+    }
+
+    // Read context from query params (e.g. /chat?context=idea_search)
+    const params = await searchParams;
+    const context = params.context;
+
+    // Redirect learning context to the dedicated learning page
+    if (context === "learning") {
+        redirect("/learning");
     }
 
     // Load user's active project to pre-set context
@@ -31,6 +44,7 @@ export default async function ChatPage() {
             <div className="h-full max-w-3xl mx-auto">
                 <ChatWindow
                     projectStage={project?.stage}
+                    initialContext={context}
                 />
             </div>
         </main>

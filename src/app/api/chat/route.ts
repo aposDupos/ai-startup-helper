@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runAgentStreaming, type GigaChatMessageInput } from "@/lib/ai/agents/router";
 import { logAICall } from "@/lib/ai/observability";
@@ -203,6 +204,9 @@ export async function POST(req: Request) {
                             `data: ${JSON.stringify({ type: "tools", results: toolResults })}\n\n`
                         )
                     );
+
+                    // Revalidate dashboard so progress updates appear without manual refresh
+                    revalidatePath("/dashboard");
                 }
 
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));

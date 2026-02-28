@@ -14,12 +14,25 @@ const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/chat", label: "AI-наставник", icon: MessageCircle },
     { href: "/workspace", label: "Workspace", icon: Wrench },
-    { href: "/academy", label: "Academy", icon: BookOpen },
+    { href: "/learning", label: "Learning", icon: BookOpen },
     { href: "/leaderboard", label: "Лидерборд", icon: Trophy },
 ];
 
-export function Sidebar() {
+export interface UserProfile {
+    displayName: string;
+    level: number;
+    xp: number;
+    streakCount: number;
+}
+
+interface SidebarProps {
+    userProfile: UserProfile;
+}
+
+export function Sidebar({ userProfile }: SidebarProps) {
     const pathname = usePathname();
+
+    const avatarInitial = userProfile.displayName.charAt(0).toUpperCase();
 
     return (
         <aside className="hidden md:flex flex-col w-[240px] h-screen fixed left-0 top-0 bg-surface-0 border-r border-surface-200 z-30">
@@ -73,13 +86,18 @@ export function Sidebar() {
             <div className="px-3 pb-4 border-t border-surface-100 pt-4">
                 <div className="flex items-center gap-3 px-3 py-2">
                     <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-caption font-bold text-primary-600">
-                        U
+                        {avatarInitial}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-body-sm font-medium text-surface-900 truncate">
-                            Пользователь
+                            {userProfile.displayName}
                         </p>
-                        <p className="text-caption text-surface-400">⭐ Lvl 1</p>
+                        <p className="text-caption text-surface-400">
+                            {userProfile.streakCount > 0 && (
+                                <span>🔥 {userProfile.streakCount} | </span>
+                            )}
+                            ⭐ Lvl {userProfile.level}
+                        </p>
                     </div>
                 </div>
             </div>

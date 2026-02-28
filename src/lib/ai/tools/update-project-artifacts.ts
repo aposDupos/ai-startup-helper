@@ -19,6 +19,7 @@ export interface UpdateProjectArtifactsResult {
     success: boolean;
     field?: string;
     checklistCompleted?: string;
+    checklistError?: string;
     error?: string;
 }
 
@@ -78,16 +79,23 @@ export async function executeUpdateProjectArtifacts(
         // Auto-complete the corresponding checklist item
         let checklistCompleted: string | undefined;
         const mapping = ARTIFACT_TO_CHECKLIST[input.field];
+        let checklistError: string | undefined;
         if (mapping) {
             try {
-                await executeCompleteChecklist({
+                const checklistResult = await executeCompleteChecklist({
                     projectId: input.projectId,
                     stage: mapping.stage,
                     itemKey: mapping.itemKey,
                 });
-                checklistCompleted = mapping.itemKey;
+                if (checklistResult.success) {
+                    checklistCompleted = mapping.itemKey;
+                } else {
+                    checklistError = checklistResult.error || "Checklist completion returned failure";
+                    console.error("[UpdateArtifacts] Checklist auto-complete failed:", checklistError);
+                }
             } catch (err) {
-                console.warn("[UpdateArtifacts] Checklist auto-complete failed:", err);
+                checklistError = err instanceof Error ? err.message : "Unknown checklist error";
+                console.error("[UpdateArtifacts] Checklist auto-complete exception:", err);
             }
         }
 
@@ -95,6 +103,7 @@ export async function executeUpdateProjectArtifacts(
             success: true,
             field: input.field,
             checklistCompleted,
+            checklistError,
         };
     } catch (err) {
         console.error("[UpdateProjectArtifacts] Error:", err);

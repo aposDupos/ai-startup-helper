@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
-import { ContextSwitcher } from "./ContextSwitcher";
+import { StageBadge } from "./StageBadge";
 import type { StageContext } from "@/lib/ai/prompts";
 
 export interface ToolResult {
@@ -19,25 +19,73 @@ export interface Message {
     toolResults?: ToolResult[];
 }
 
+// Map entry point context to chat StageContext + greeting
+const CONTEXT_MAP: Record<string, { stageContext: StageContext; greeting: string }> = {
+    idea_search: {
+        stageContext: "idea_search",
+        greeting: "Привет! 👋 Давай найдём идею для стартапа. Расскажи о своих интересах, навыках и проблемах, которые ты видишь вокруг — мы вместе придумаем что-то крутое!",
+    },
+    idea_evaluation: {
+        stageContext: "idea_search",
+        greeting: "Привет! 🎯 Расскажи свою идею, и я помогу её оценить. Опиши проблему, которую ты решаешь, и кто твоя целевая аудитория.",
+    },
+    project_assessment: {
+        stageContext: "general",
+        greeting: "Привет! 🚀 Расскажи о своём проекте — что уже сделано, на каком этапе находишься. Я определю стадию и помогу двигаться дальше.",
+    },
+};
+
+// Map project.stage → valid StageContext for the DB check constraint
+const STAGE_TO_CONTEXT: Record<string, StageContext> = {
+    idea: "idea_search",
+    validation: "validation",
+    business_model: "bmc",
+    mvp: "mvp",
+    pitch: "pitch",
+};
+
 interface ChatWindowProps {
     initialConversationId?: string;
     initialMessages?: Message[];
     projectStage?: string;
     stageContext?: string;
     checklistItemKey?: string;
+    initialContext?: string;
 }
 
 export function ChatWindow({
     initialConversationId,
     initialMessages = [],
     projectStage,
+    initialContext,
 }: ChatWindowProps) {
-    const [messages, setMessages] = useState<Message[]>(initialMessages);
+    // Derive initial context from entry point or project stage
+    const contextConfig = initialContext ? CONTEXT_MAP[initialContext] : undefined;
+    const derivedStageContext: StageContext =
+        contextConfig?.stageContext
+        ?? (projectStage ? STAGE_TO_CONTEXT[projectStage] : undefined)
+        ?? "general";
+
+    // Build initial messages with greeting if entry point context provided
+    const startingMessages = useMemo(() => {
+        if (initialMessages.length > 0) return initialMessages;
+        if (contextConfig?.greeting) {
+            return [
+                {
+                    id: crypto.randomUUID(),
+                    role: "assistant" as const,
+                    content: contextConfig.greeting,
+                    createdAt: new Date(),
+                },
+            ];
+        }
+        return [];
+    }, [initialMessages, contextConfig?.greeting]);
+
+    const [messages, setMessages] = useState<Message[]>(startingMessages);
     const [streamingContent, setStreamingContent] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
-    const [contextType, setContextType] = useState<StageContext>(
-        (projectStage as StageContext) ?? "general"
-    );
+    const [contextType] = useState<StageContext>(derivedStageContext);
     const [conversationId, setConversationId] = useState<string | undefined>(
         initialConversationId
     );
@@ -170,18 +218,12 @@ export function ChatWindow({
         setStreamingContent("");
     }
 
-    function handleContextChange(stage: StageContext) {
-        setContextType(stage);
-        // Don't reset conversation — just change context for next message
-    }
-
     return (
         <div className="flex flex-col h-full bg-surface-0 rounded-2xl border border-surface-200 overflow-hidden shadow-sm">
-            {/* Context switcher */}
-            <ContextSwitcher
-                current={contextType}
-                onChange={handleContextChange}
-                projectStage={projectStage}
+            {/* Read-only stage badge */}
+            <StageBadge
+                stage={contextType}
+                hasProject={!!projectStage}
             />
 
             {/* Messages area */}

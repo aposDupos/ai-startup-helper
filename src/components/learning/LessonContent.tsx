@@ -2,9 +2,11 @@
 
 import type { LessonContentBlock } from "@/types/lesson";
 import { Info, Lightbulb, AlertTriangle } from "lucide-react";
+import { personalizeContent, type ProjectPersonalizationContext } from "@/lib/learning/personalize";
 
 interface LessonContentProps {
     blocks: LessonContentBlock[];
+    projectContext?: ProjectPersonalizationContext | null;
 }
 
 const calloutIcons = {
@@ -19,7 +21,9 @@ const calloutStyles = {
     warning: "bg-accent-500/5 border-accent-500/20 text-accent-700",
 };
 
-export function LessonContent({ blocks }: LessonContentProps) {
+export function LessonContent({ blocks, projectContext }: LessonContentProps) {
+    const p = (text: string) => personalizeContent(text, projectContext);
+
     return (
         <div className="space-y-3">
             {blocks.map((block, i) => {
@@ -33,7 +37,7 @@ export function LessonContent({ blocks }: LessonContentProps) {
                                     fontFamily: "var(--font-heading)",
                                 }}
                             >
-                                {block.text}
+                                {p(block.text)}
                             </h4>
                         );
                     case "paragraph":
@@ -42,7 +46,7 @@ export function LessonContent({ blocks }: LessonContentProps) {
                                 key={i}
                                 className="text-body-sm text-surface-700 leading-relaxed"
                             >
-                                {block.text}
+                                {p(block.text)}
                             </p>
                         );
                     case "callout": {
@@ -54,7 +58,7 @@ export function LessonContent({ blocks }: LessonContentProps) {
                             >
                                 <Icon size={16} className="shrink-0 mt-0.5" />
                                 <p className="text-body-sm leading-relaxed">
-                                    {block.text}
+                                    {p(block.text)}
                                 </p>
                             </div>
                         );

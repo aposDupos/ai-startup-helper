@@ -6,17 +6,20 @@ import { BookOpen, Clock, ChevronDown, ChevronUp, Award } from "lucide-react";
 import { LessonContent } from "./LessonContent";
 import { QuizWidget } from "./QuizWidget";
 import type { Lesson } from "@/types/lesson";
+import type { ProjectPersonalizationContext } from "@/lib/learning/personalize";
 
 interface InlineLessonProps {
     lesson: Lesson;
     isCompleted?: boolean;
     onComplete?: (lessonId: string, score: number) => void;
+    projectContext?: ProjectPersonalizationContext | null;
 }
 
 export function InlineLesson({
     lesson,
     isCompleted = false,
     onComplete,
+    projectContext,
 }: InlineLessonProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [showQuiz, setShowQuiz] = useState(false);
@@ -30,8 +33,8 @@ export function InlineLesson({
     return (
         <div
             className={`rounded-xl border overflow-hidden transition-all ${completed
-                    ? "border-success-500/30 bg-success-500/3"
-                    : "border-primary-200 bg-primary-50/30"
+                ? "border-success-500/30 bg-success-500/3"
+                : "border-primary-200 bg-primary-50/30"
                 }`}
         >
             {/* Header — always visible */}
@@ -42,8 +45,8 @@ export function InlineLesson({
                 <div className="flex items-center gap-2.5">
                     <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center ${completed
-                                ? "bg-success-500/10"
-                                : "bg-primary-500/10"
+                            ? "bg-success-500/10"
+                            : "bg-primary-500/10"
                             }`}
                     >
                         {completed ? (
@@ -102,7 +105,7 @@ export function InlineLesson({
                     >
                         <div className="px-4 pb-4 space-y-4">
                             {/* Lesson content */}
-                            <LessonContent blocks={lesson.content} />
+                            <LessonContent blocks={lesson.content} projectContext={projectContext} />
 
                             {/* Quiz section */}
                             {lesson.quiz.length > 0 && (

@@ -15,6 +15,7 @@ import { executeCreateProject } from "@/lib/ai/tools/create-project";
 import { executeCompleteChecklist } from "@/lib/ai/tools/complete-checklist";
 import { executeReopenStage } from "@/lib/ai/tools/reopen-stage";
 import { executeUpdateProjectArtifacts } from "@/lib/ai/tools/update-project-artifacts";
+import { executeSuggestLesson } from "@/lib/ai/tools/suggest-lesson";
 import type { StageKey } from "@/types/project";
 
 // ---------------------------------------------------------------------------
@@ -189,6 +190,26 @@ const GIGACHAT_FUNCTIONS = [
             required: ["projectId", "field", "value"],
         },
     },
+    {
+        name: "suggest_lesson",
+        description:
+            "Рекомендует пользователю подходящий урок из раздела обучения. Используй когда пользователь затрудняется, задаёт базовый вопрос, или просит совет по теме. Возвращает ссылку на конкретный урок.",
+        parameters: {
+            type: "object",
+            properties: {
+                stage: {
+                    type: "string",
+                    enum: ["idea", "validation", "business_model", "mvp", "pitch"],
+                    description: "Стадия проекта для подбора урока",
+                },
+                topic: {
+                    type: "string",
+                    description: "Тема вопроса для поиска релевантного урока (например 'CustDev', 'BMC', 'питч')",
+                },
+            },
+            required: ["stage"],
+        },
+    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -253,6 +274,13 @@ async function executeTool(
                     projectId: args.projectId as string,
                     field: args.field as string,
                     value: args.value as string,
+                });
+                return { toolName, result };
+            }
+            case "suggest_lesson": {
+                const result = await executeSuggestLesson({
+                    stage: args.stage as string,
+                    topic: args.topic as string | undefined,
                 });
                 return { toolName, result };
             }

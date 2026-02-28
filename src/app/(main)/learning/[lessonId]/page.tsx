@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { LessonContent } from "@/components/learning/LessonContent";
 import { FullLessonQuiz } from "@/components/learning/FullLessonQuiz";
 import type { Lesson, UserLessonProgress } from "@/types/lesson";
+import type { ProjectPersonalizationContext } from "@/lib/learning/personalize";
 
 interface LessonPageProps {
     params: Promise<{ lessonId: string }>;
@@ -40,6 +41,26 @@ export default async function LessonPage({ params }: LessonPageProps) {
     const isCompleted = progress?.status === "completed";
     const userProgress = progress as UserLessonProgress | null;
 
+    // Fetch active project for personalization
+    let projectContext: ProjectPersonalizationContext | null = null;
+    const { data: projects } = await supabase
+        .from("projects")
+        .select("title, description, artifacts")
+        .eq("owner_id", user.id)
+        .eq("is_active", true)
+        .limit(1);
+
+    if (projects && projects.length > 0) {
+        const proj = projects[0];
+        const artifacts = (proj.artifacts ?? {}) as Record<string, unknown>;
+        projectContext = {
+            title: proj.title || undefined,
+            problem: (artifacts.problem as string) || undefined,
+            target_audience: (artifacts.target_audience as string) || undefined,
+            idea: (artifacts.idea_formulation as string) || undefined,
+        };
+    }
+
     return (
         <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
             {/* Breadcrumb */}
@@ -57,8 +78,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     <div className="flex items-center gap-3">
                         <div
                             className={`w-12 h-12 rounded-xl flex items-center justify-center ${isCompleted
-                                    ? "bg-success-500/10"
-                                    : "bg-primary-500/10"
+                                ? "bg-success-500/10"
+                                : "bg-primary-500/10"
                                 }`}
                         >
                             {isCompleted ? (
@@ -139,7 +160,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             {/* Lesson Content */}
             <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
-                <LessonContent blocks={typedLesson.content} />
+                <LessonContent blocks={typedLesson.content} projectContext={projectContext} />
             </div>
 
             {/* Quiz Section */}
@@ -153,6 +174,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                         questions={typedLesson.quiz}
                         isAlreadyCompleted={isCompleted}
                         previousScore={userProgress?.score ?? null}
+                        projectContext={projectContext}
                     />
                 </div>
             )}

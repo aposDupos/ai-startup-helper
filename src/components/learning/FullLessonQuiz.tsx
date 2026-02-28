@@ -5,12 +5,14 @@ import { QuizWidget } from "./QuizWidget";
 import { completeLessonProgress } from "@/app/(main)/learning/actions";
 import { useGamification } from "@/contexts/GamificationContext";
 import type { QuizQuestion } from "@/types/lesson";
+import type { ProjectPersonalizationContext } from "@/lib/learning/personalize";
 
 interface FullLessonQuizProps {
     lessonId: string;
     questions: QuizQuestion[];
     isAlreadyCompleted: boolean;
     previousScore: number | null;
+    projectContext?: ProjectPersonalizationContext | null;
 }
 
 export function FullLessonQuiz({
@@ -18,6 +20,7 @@ export function FullLessonQuiz({
     questions,
     isAlreadyCompleted,
     previousScore,
+    projectContext,
 }: FullLessonQuizProps) {
     const [completed, setCompleted] = useState(isAlreadyCompleted);
     const [score, setScore] = useState<number | null>(previousScore);
@@ -68,7 +71,7 @@ export function FullLessonQuiz({
 
     return (
         <div>
-            <QuizWidget questions={questions} onComplete={handleComplete} />
+            <QuizWidget questions={questions} onComplete={handleComplete} projectContext={projectContext} />
             {isPending && (
                 <div className="text-center mt-3">
                     <span className="text-caption text-surface-400">

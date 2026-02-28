@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { User, Bot } from "lucide-react";
 import { ICEScoreCard } from "./ICEScoreCard";
 import { IdeaSavedCard } from "./IdeaSavedCard";
+import { LessonSuggestionCard } from "./LessonSuggestionCard";
 import type { Message } from "./ChatWindow";
 
 interface MessageBubbleProps {
@@ -19,8 +20,8 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
             {/* Avatar */}
             <div
                 className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser
-                        ? "bg-primary-100 text-primary-600"
-                        : "bg-surface-100 text-surface-600"
+                    ? "bg-primary-100 text-primary-600"
+                    : "bg-surface-100 text-surface-600"
                     }`}
             >
                 {isUser ? (
@@ -35,8 +36,8 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
                 {/* Text bubble */}
                 <div
                     className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser
-                            ? "bg-primary-500 text-white rounded-tr-sm"
-                            : "bg-surface-50 border border-surface-200 text-surface-900 rounded-tl-sm"
+                        ? "bg-primary-500 text-white rounded-tr-sm"
+                        : "bg-surface-50 border border-surface-200 text-surface-900 rounded-tl-sm"
                         }`}
                     style={
                         isUser
@@ -66,6 +67,9 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
                     }
                     if (result.toolName === "save_idea") {
                         return <IdeaSavedCard key={i} data={result.result as never} />;
+                    }
+                    if (result.toolName === "suggest_lesson") {
+                        return <LessonSuggestionCard key={i} data={result.result as never} />;
                     }
                     return null;
                 })}

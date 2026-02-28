@@ -222,13 +222,66 @@ npm install lucide-react
 - Inputs: `radius-sm`, 44px height (touch-friendly), border `surface-200`
 - Badge: `radius-full`, font `caption`, uppercase tracking `0.05em`
 
+## Анимации (framer-motion)
+
+Для продвинутых анимаций используется **framer-motion** (`npm install framer-motion`).
+
+### Паттерны использования
+
+#### Анимации появления страниц / карточек
+```tsx
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4, ease: "easeOut" }}
+>
+```
+
+#### Stagger-анимация для списков
+```tsx
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
+```
+
+#### 3D-анимации для Gamification
+Использовать `perspective` + `rotateY` / `rotateX` для 3D-эффектов:
+```tsx
+// Card flip при получении ачивки
+<motion.div
+  style={{ perspective: 800 }}
+  whileHover={{ rotateY: 15, scale: 1.05 }}
+  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+>
+
+// XP counter с пружинным bounce
+<motion.span
+  key={xp}
+  initial={{ scale: 1.5, rotateX: -90 }}
+  animate={{ scale: 1, rotateX: 0 }}
+  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+/>
+
+// Level-up celebration с 3D rotation
+<motion.div
+  animate={{ rotateY: 360, scale: [1, 1.3, 1] }}
+  transition={{ duration: 0.8, ease: "easeInOut" }}
+/>
+```
+
+### Правила
+- Длительность: 200–500ms для micro-interactions, до 800ms для 3D celebrations
+- Spring damping: 15–25 (bouncy для gamification, 25+ для UI)
+- `AnimatePresence` для exit-анимаций при смене маршрутов
+- `useReducedMotion()` — отключать 3D и bounce при `prefers-reduced-motion`
+- Не анимировать layout-сдвиги > 50px на мобильных
+
 ## Gamification UI
 
 - XP числа: `font-mono`, `color-accent-500`, font-weight 500
 - Progress bars: gradient from `primary-400` to `primary-600`, `radius-full`, height 8px
-- Level badges: circle `48px`, gradient background, `shadow-glow-primary`
-- Achievement cards: subtle gradient border (primary → accent), `radius-lg`
-- Streak flame: animated emoji 🔥 + counter в `font-mono`
+- Level badges: circle `48px`, gradient background, `shadow-glow-primary`, **3D hover** (rotateY)
+- Achievement cards: subtle gradient border (primary → accent), `radius-lg`, **flip animation** при unlock
+- Streak flame: animated emoji 🔥 + counter в `font-mono`, **spring bounce** при увеличении
 - Leaderboard: alternating row backgrounds (`surface-0` / `surface-50`)
 
 ## Дополнительные ресурсы

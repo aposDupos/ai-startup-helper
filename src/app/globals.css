@@ -1,0 +1,342 @@
+@import "tailwindcss";
+@import "../styles/design-tokens.css";
+
+@theme inline {
+  /* Colors */
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+
+  --color-accent-400: var(--color-accent-400);
+  --color-accent-500: var(--color-accent-500);
+  --color-accent-600: var(--color-accent-600);
+
+  --color-success-400: var(--color-success-400);
+  --color-success-500: var(--color-success-500);
+
+  --color-error-400: var(--color-error-400);
+  --color-error-500: var(--color-error-500);
+  --color-error-600: var(--color-error-600);
+
+  --color-warning-400: var(--color-warning-400);
+  --color-warning-500: var(--color-warning-500);
+
+  --color-surface-0: var(--color-surface-0);
+  --color-surface-50: var(--color-surface-50);
+  --color-surface-100: var(--color-surface-100);
+  --color-surface-200: var(--color-surface-200);
+  --color-surface-300: var(--color-surface-300);
+  --color-surface-400: var(--color-surface-400);
+  --color-surface-500: var(--color-surface-500);
+  --color-surface-600: var(--color-surface-600);
+  --color-surface-700: var(--color-surface-700);
+  --color-surface-800: var(--color-surface-800);
+  --color-surface-900: var(--color-surface-900);
+  --color-surface-950: var(--color-surface-950);
+
+  /* Fonts */
+  --font-heading: var(--font-jakarta), "Inter", system-ui, sans-serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "Fira Code", monospace;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+
+/* ============================================
+   shadcn/ui CSS Variable Mappings
+   ============================================ */
+
+:root {
+  /* Background & Foreground */
+  --background: var(--color-surface-50);
+  --foreground: var(--color-text-primary);
+
+  /* Card */
+  --card: var(--color-surface-0);
+  --card-foreground: var(--color-text-primary);
+
+  /* Popover */
+  --popover: var(--color-surface-0);
+  --popover-foreground: var(--color-text-primary);
+
+  /* Primary */
+  --primary: var(--color-primary-500);
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary */
+  --secondary: var(--color-surface-100);
+  --secondary-foreground: var(--color-text-primary);
+
+  /* Muted */
+  --muted: var(--color-surface-100);
+  --muted-foreground: var(--color-text-secondary);
+
+  /* Accent */
+  --accent: var(--color-primary-50);
+  --accent-foreground: var(--color-primary-700);
+
+  /* Destructive */
+  --destructive: var(--color-error-500);
+  --destructive-foreground: #FFFFFF;
+
+  /* Border & Input & Ring */
+  --border: var(--color-surface-200);
+  --input: var(--color-surface-200);
+  --ring: var(--color-primary-500);
+
+  /* Sidebar */
+  --sidebar: var(--color-surface-0);
+  --sidebar-foreground: var(--color-text-primary);
+  --sidebar-border: var(--color-surface-200);
+  --sidebar-accent: var(--color-primary-50);
+  --sidebar-accent-foreground: var(--color-primary-600);
+  --sidebar-ring: var(--color-primary-500);
+
+  /* Chart */
+  --chart-1: var(--color-primary-500);
+  --chart-2: var(--color-accent-500);
+  --chart-3: var(--color-success-500);
+  --chart-4: var(--color-warning-500);
+  --chart-5: var(--color-error-500);
+
+  /* Radius */
+  --radius: 0.75rem;
+}
+
+[data-theme="dark"] {
+  --background: var(--color-surface-950);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-surface-900);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-surface-900);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-primary-400);
+  --primary-foreground: var(--color-surface-950);
+  --secondary: var(--color-surface-800);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-surface-800);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-surface-800);
+  --accent-foreground: var(--color-primary-300);
+  --destructive: var(--color-error-400);
+  --destructive-foreground: #FFFFFF;
+  --border: var(--color-surface-700);
+  --input: var(--color-surface-700);
+  --ring: var(--color-primary-400);
+  --sidebar: var(--color-surface-900);
+  --sidebar-foreground: var(--color-text-primary);
+  --sidebar-border: var(--color-surface-700);
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+body {
+  background-color: var(--color-surface-50);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+.text-display {
+  font-family: var(--font-heading);
+  font-size: 48px;
+  line-height: 56px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.text-h1 {
+  font-family: var(--font-heading);
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-h2 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-h3 {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-h4 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.text-body {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.text-body-sm {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.text-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* Max content width */
+.prose-width {
+  max-width: 65ch;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+  }
+}
+
+@keyframes wiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-3deg);
+  }
+
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes spring-bounce {
+  0% {
+    transform: scale(0.8);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-slow) ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right var(--transition-slow) ease-out;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg,
+      var(--color-surface-100) 25%,
+      var(--color-surface-200) 50%,
+      var(--color-surface-100) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 2s infinite;
+}
+
+.animate-spring-bounce {
+  animation: spring-bounce var(--transition-spring);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

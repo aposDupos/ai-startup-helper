@@ -12,12 +12,15 @@ import {
     type ProgressData,
     type ChecklistItemData,
 } from "@/types/project";
+import type { Lesson } from "@/types/lesson";
 
 interface JourneyMapProps {
     currentStage: StageKey;
     progressData: ProgressData;
     projectId: string;
     checklists: ChecklistItemData[];
+    lessons: Record<string, Lesson>;
+    completedLessonIds: string[];
 }
 
 const containerVariants = {
@@ -37,6 +40,8 @@ export function JourneyMap({
     progressData,
     projectId,
     checklists,
+    lessons,
+    completedLessonIds,
 }: JourneyMapProps) {
     const [activeStage, setActiveStage] = useState<StageKey | null>(null);
 
@@ -151,6 +156,8 @@ export function JourneyMap({
                         projectId={projectId}
                         progressData={progressData}
                         checklists={checklists.filter((c) => c.stage === activeStage)}
+                        lessons={lessons}
+                        completedLessonIds={completedLessonIds}
                         onClose={() => setActiveStage(null)}
                     />
                 )}

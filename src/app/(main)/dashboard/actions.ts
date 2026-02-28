@@ -20,6 +20,40 @@ export async function getStageChecklists() {
 }
 
 // ---------------------------------------------------------------------------
+// Lessons: fetch keyed map + user progress
+// ---------------------------------------------------------------------------
+
+export async function getLessonsMap() {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { lessons: {}, completedIds: [] };
+
+    const { data: lessons } = await supabase
+        .from("lessons")
+        .select("*")
+        .order("sort_order");
+
+    const { data: progress } = await supabase
+        .from("user_lesson_progress")
+        .select("lesson_id")
+        .eq("user_id", user.id)
+        .eq("status", "completed");
+
+    const lessonsMap: Record<string, (typeof lessons extends (infer T)[] | null ? T : never)> = {};
+    for (const l of lessons || []) {
+        lessonsMap[l.id] = l;
+    }
+
+    return {
+        lessons: lessonsMap,
+        completedIds: (progress || []).map((p) => p.lesson_id),
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Toggle checklist item
 // ---------------------------------------------------------------------------
 

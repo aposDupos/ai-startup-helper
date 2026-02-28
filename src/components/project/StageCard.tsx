@@ -12,12 +12,15 @@ import {
     type ProgressData,
     type ChecklistItemData,
 } from "@/types/project";
+import type { Lesson } from "@/types/lesson";
 
 interface StageCardProps {
     stageKey: StageKey;
     projectId: string;
     progressData: ProgressData;
     checklists: ChecklistItemData[];
+    lessons: Record<string, Lesson>;
+    completedLessonIds: string[];
     onClose: () => void;
 }
 
@@ -26,6 +29,8 @@ export function StageCard({
     projectId,
     progressData,
     checklists,
+    lessons,
+    completedLessonIds,
     onClose,
 }: StageCardProps) {
     const stage = STAGES.find((s) => s.key === stageKey)!;
@@ -93,6 +98,8 @@ export function StageCard({
                                 isCompleted={optimisticCompleted.includes(item.item_key)}
                                 onToggle={handleToggle}
                                 projectStage={stageKey}
+                                lesson={item.linked_lesson_id ? lessons[item.linked_lesson_id] : null}
+                                isLessonCompleted={item.linked_lesson_id ? completedLessonIds.includes(item.linked_lesson_id) : false}
                             />
                         ))}
                 </div>

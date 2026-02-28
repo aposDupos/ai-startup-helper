@@ -7,7 +7,7 @@ import {
 import { JourneyMap } from "@/components/project/JourneyMap";
 import { CreateProjectWidget } from "@/components/project/CreateProjectWidget";
 import { TeamSection } from "@/components/project/TeamSection";
-import { getStageChecklists } from "./actions";
+import { getStageChecklists, getLessonsMap } from "./actions";
 import type {
     ProgressData,
     StageKey,
@@ -38,8 +38,13 @@ export default async function DashboardPage() {
 
     // Load checklists for Journey Map
     let checklists: ChecklistItemData[] = [];
+    let lessonsMap: Record<string, any> = {};
+    let completedLessonIds: string[] = [];
     if (activeProject) {
         checklists = (await getStageChecklists()) as ChecklistItemData[];
+        const lessonsData = await getLessonsMap();
+        lessonsMap = lessonsData.lessons;
+        completedLessonIds = lessonsData.completedIds;
     }
 
     const progressData: ProgressData =
@@ -71,6 +76,8 @@ export default async function DashboardPage() {
                         progressData={progressData}
                         projectId={activeProject.id}
                         checklists={checklists}
+                        lessons={lessonsMap}
+                        completedLessonIds={completedLessonIds}
                     />
 
                     {/* AI Recommendation + Team row */}

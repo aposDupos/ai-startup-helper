@@ -22,6 +22,7 @@ export interface CompleteChecklistResult {
     xpGained?: number;
     leveledUp?: boolean;
     newLevel?: number;
+    celebrationEvent?: "stage_complete";
     error?: string;
 }
 
@@ -153,6 +154,7 @@ export async function executeCompleteChecklist(
             xpGained,
             leveledUp,
             newLevel: resultLevel || undefined,
+            celebrationEvent: (allDone && stageAdvanced) ? "stage_complete" : undefined,
         };
     } catch (err) {
         console.error("[CompleteChecklistTool] Error:", err);

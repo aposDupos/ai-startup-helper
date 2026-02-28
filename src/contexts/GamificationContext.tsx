@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { XPToast, type ToastEvent } from "@/components/gamification/XPToast";
+import { LevelUpModal } from "@/components/gamification/LevelUpModal";
+import { AchievementModal, type AchievementData } from "@/components/gamification/AchievementModal";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,9 +17,10 @@ interface InitialEvents {
 
 interface GamificationContextValue {
     showXPToast: (amount: number, description?: string) => void;
-    showLevelUpToast: (level: number) => void;
-    showAchievementToast: (title: string, icon?: string) => void;
+    showLevelUp: (level: number) => void;
+    showAchievement: (title: string, icon?: string, description?: string, xpReward?: number) => void;
     showStreakToast: (count: number, milestone?: number | null) => void;
+    triggerConfetti: () => void;
 }
 
 const GamificationContext = createContext<GamificationContextValue | null>(null);
@@ -44,12 +47,24 @@ interface GamificationProviderProps {
 }
 
 export function GamificationProvider({ children, initialEvents }: GamificationProviderProps) {
+    // Toast state (XP + streak — small toasts)
     const [toasts, setToasts] = useState<ToastEvent[]>([]);
-    const nextId = useRef(0);
+    const nextToastId = useRef(0);
     const initialProcessed = useRef(false);
 
+    // Level Up modal state
+    const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null);
+
+    // Achievement queue state
+    const [achievementQueue, setAchievementQueue] = useState<AchievementData[]>([]);
+    const nextAchId = useRef(0);
+
+    // -----------------------------------------------------------------------
+    // Toast helpers (XP & streak — small bottom-right toasts)
+    // -----------------------------------------------------------------------
+
     const addToast = useCallback((toast: Omit<ToastEvent, "id">) => {
-        const id = ++nextId.current;
+        const id = ++nextToastId.current;
         setToasts((prev) => [...prev, { ...toast, id }]);
     }, []);
 
@@ -64,20 +79,6 @@ export function GamificationProvider({ children, initialEvents }: GamificationPr
         [addToast]
     );
 
-    const showLevelUpToast = useCallback(
-        (level: number) => {
-            addToast({ type: "level_up", level });
-        },
-        [addToast]
-    );
-
-    const showAchievementToast = useCallback(
-        (title: string, icon?: string) => {
-            addToast({ type: "achievement", title, icon });
-        },
-        [addToast]
-    );
-
     const showStreakToast = useCallback(
         (count: number, milestone?: number | null) => {
             addToast({ type: "streak", streakCount: count, milestone });
@@ -85,12 +86,65 @@ export function GamificationProvider({ children, initialEvents }: GamificationPr
         [addToast]
     );
 
+    // -----------------------------------------------------------------------
+    // Level Up Modal
+    // -----------------------------------------------------------------------
+
+    const showLevelUp = useCallback((level: number) => {
+        setLevelUpLevel(level);
+    }, []);
+
+    const dismissLevelUp = useCallback(() => {
+        setLevelUpLevel(null);
+    }, []);
+
+    // -----------------------------------------------------------------------
+    // Achievement Modal (queued)
+    // -----------------------------------------------------------------------
+
+    const showAchievement = useCallback(
+        (title: string, icon?: string, description?: string, xpReward?: number) => {
+            const id = ++nextAchId.current;
+            setAchievementQueue((prev) => [
+                ...prev,
+                { id, title, icon: icon || "🏆", description, xpReward },
+            ]);
+        },
+        []
+    );
+
+    const dismissAchievement = useCallback((id: number) => {
+        setAchievementQueue((prev) => prev.filter((a) => a.id !== id));
+    }, []);
+
+    // -----------------------------------------------------------------------
+    // Confetti helper (for stage completion, etc.)
+    // -----------------------------------------------------------------------
+
+    const triggerConfetti = useCallback(() => {
+        // Dynamic import to avoid SSR issues
+        import("canvas-confetti").then((mod) => {
+            const fire = mod.default;
+            const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            if (prefersReduced) return;
+
+            fire({
+                particleCount: 100,
+                spread: 80,
+                origin: { x: 0.5, y: 0.5 },
+                colors: ["#6366F1", "#F97316", "#22C55E", "#FBBF24"],
+            });
+        });
+    }, []);
+
+    // -----------------------------------------------------------------------
     // Process initial events (streak update on SSR)
+    // -----------------------------------------------------------------------
+
     useEffect(() => {
         if (initialEvents && !initialProcessed.current) {
             initialProcessed.current = true;
 
-            // Delay slightly so page has a chance to render
             const timer = setTimeout(() => {
                 if (initialEvents.xpGained > 0) {
                     showXPToast(initialEvents.xpGained, "Ежедневная активность");
@@ -107,17 +161,32 @@ export function GamificationProvider({ children, initialEvents }: GamificationPr
         }
     }, [initialEvents, showXPToast, showStreakToast]);
 
+    // -----------------------------------------------------------------------
+    // Context value
+    // -----------------------------------------------------------------------
+
     const value: GamificationContextValue = {
         showXPToast,
-        showLevelUpToast,
-        showAchievementToast,
+        showLevelUp,
+        showAchievement,
         showStreakToast,
+        triggerConfetti,
     };
 
     return (
         <GamificationContext.Provider value={value}>
             {children}
+
+            {/* Small toasts (XP, streak) — bottom-right */}
             <XPToast toasts={toasts} onRemove={removeToast} />
+
+            {/* Level Up — full-screen modal */}
+            {levelUpLevel !== null && (
+                <LevelUpModal level={levelUpLevel} onClose={dismissLevelUp} />
+            )}
+
+            {/* Achievement — bottom-center slide-up */}
+            <AchievementModal queue={achievementQueue} onDismiss={dismissAchievement} />
         </GamificationContext.Provider>
     );
 }

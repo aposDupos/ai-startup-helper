@@ -22,7 +22,7 @@ export function MicroLessonCard({
     const [showQuiz, setShowQuiz] = useState(false);
     const [completed, setCompleted] = useState(initialCompleted);
     const [isPending, startTransition] = useTransition();
-    const { showXPToast, showLevelUpToast } = useGamification();
+    const { showXPToast, showLevelUp, showAchievement } = useGamification();
 
     // For micro lessons, show only first 2 content blocks
     const microContent = lesson.content.slice(0, 2);
@@ -36,7 +36,12 @@ export function MicroLessonCard({
                 setCompleted(true);
                 showXPToast(result.xpGained, "Мини-урок завершён!");
                 if (result.leveledUp) {
-                    showLevelUpToast(result.newLevel);
+                    showLevelUp(result.newLevel);
+                }
+                if (result.unlockedAchievements) {
+                    for (const a of result.unlockedAchievements) {
+                        showAchievement(a.title, a.icon ?? undefined);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to complete lesson:", err);

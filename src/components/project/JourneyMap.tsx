@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StageNode } from "./StageNode";
 import { StagePath } from "./StagePath";
@@ -35,6 +35,17 @@ const nodeVariants = {
     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } },
 };
 
+// Special animation for newly unlocked stages
+const unlockVariants = {
+    initial: { scale: 0.6, opacity: 0, filter: "grayscale(1)" },
+    animate: {
+        scale: 1,
+        opacity: 1,
+        filter: "grayscale(0)",
+        transition: { type: "spring" as const, stiffness: 300, damping: 15 },
+    },
+};
+
 export function JourneyMap({
     currentStage,
     progressData,
@@ -44,6 +55,21 @@ export function JourneyMap({
     completedLessonIds,
 }: JourneyMapProps) {
     const [activeStage, setActiveStage] = useState<StageKey | null>(null);
+    const [justUnlockedStage, setJustUnlockedStage] = useState<StageKey | null>(null);
+
+    // Listen for stage-advanced events from ChatWindow
+    useEffect(() => {
+        function handleStageAdvanced(e: Event) {
+            const detail = (e as CustomEvent).detail;
+            if (detail?.newStage) {
+                setJustUnlockedStage(detail.newStage as StageKey);
+                // Clear the unlock animation after 3s
+                setTimeout(() => setJustUnlockedStage(null), 3000);
+            }
+        }
+        window.addEventListener("stage-advanced", handleStageAdvanced);
+        return () => window.removeEventListener("stage-advanced", handleStageAdvanced);
+    }, []);
 
     function handleStageClick(stageKey: StageKey) {
         const status = getStageStatus(stageKey, currentStage, progressData);
@@ -76,7 +102,13 @@ export function JourneyMap({
                             <motion.div
                                 key={stage.key}
                                 className="flex items-center flex-1 last:flex-initial"
-                                variants={nodeVariants}
+                                variants={stage.key === justUnlockedStage ? undefined : nodeVariants}
+                                initial={stage.key === justUnlockedStage ? unlockVariants.initial : undefined}
+                                animate={stage.key === justUnlockedStage ? unlockVariants.animate : undefined}
+                                style={stage.key === justUnlockedStage ? {
+                                    boxShadow: "0 0 24px rgba(99,102,241,0.3)",
+                                    borderRadius: 16,
+                                } : undefined}
                             >
                                 <StageNode
                                     stage={stage}

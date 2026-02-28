@@ -22,7 +22,7 @@ export function FullLessonQuiz({
     const [completed, setCompleted] = useState(isAlreadyCompleted);
     const [score, setScore] = useState<number | null>(previousScore);
     const [isPending, startTransition] = useTransition();
-    const { showXPToast, showLevelUpToast } = useGamification();
+    const { showXPToast, showLevelUp, showAchievement } = useGamification();
 
     const handleComplete = (quizScore: number) => {
         startTransition(async () => {
@@ -32,7 +32,12 @@ export function FullLessonQuiz({
                 setScore(quizScore);
                 showXPToast(result.xpGained, "Урок завершён!");
                 if (result.leveledUp) {
-                    showLevelUpToast(result.newLevel);
+                    showLevelUp(result.newLevel);
+                }
+                if (result.unlockedAchievements) {
+                    for (const a of result.unlockedAchievements) {
+                        showAchievement(a.title, a.icon ?? undefined);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to complete lesson:", err);

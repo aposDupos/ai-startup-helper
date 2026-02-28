@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
 import { StageBadge } from "./StageBadge";
+import { useGamification } from "@/contexts/GamificationContext";
 import type { StageContext } from "@/lib/ai/prompts";
 
 export interface ToolResult {
@@ -51,6 +52,9 @@ interface ChatWindowProps {
     stageContext?: string;
     checklistItemKey?: string;
     initialContext?: string;
+    userName?: string;
+    hasProject?: boolean;
+    lastStep?: string;
 }
 
 export function ChatWindow({
@@ -58,13 +62,48 @@ export function ChatWindow({
     initialMessages = [],
     projectStage,
     initialContext,
+    userName,
+    hasProject,
+    lastStep,
 }: ChatWindowProps) {
+    const { showXPToast, showLevelUp, triggerConfetti } = useGamification();
     // Derive initial context from entry point or project stage
     const contextConfig = initialContext ? CONTEXT_MAP[initialContext] : undefined;
     const derivedStageContext: StageContext =
         contextConfig?.stageContext
         ?? (projectStage ? STAGE_TO_CONTEXT[projectStage] : undefined)
         ?? "general";
+
+    // Build proactive welcome message for returning users
+    const welcomeMessage = useMemo(() => {
+        // If there's already an entry point context greeting, use that
+        if (contextConfig?.greeting) return null;
+        // If there are initial messages loaded from DB, skip welcome
+        if (initialMessages.length > 0) return null;
+
+        // Check sessionStorage to prevent duplicate greetings
+        const storageKey = `chat_welcomed_${initialConversationId || "new"}`;
+        if (typeof window !== "undefined" && sessionStorage.getItem(storageKey)) return null;
+
+        const name = userName || "друг";
+        let greeting: string;
+
+        if (hasProject && lastStep) {
+            greeting = `Привет, ${name}! 👋 В прошлый раз ты работал над: **${lastStep}**. Продолжим? Или хочешь заняться чем-то другим?`;
+        } else if (hasProject) {
+            greeting = `Привет, ${name}! 👋 Рад видеть тебя снова. Давай продолжим работу над твоим проектом. Чем хочешь заняться сегодня?`;
+        } else {
+            greeting = `Привет, ${name}! 👋 Давай начнём с создания проекта. Расскажи о своей идее, или я помогу тебе её найти!`;
+        }
+
+        // Mark as shown in sessionStorage
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem(storageKey, "1");
+        }
+
+        return greeting;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Build initial messages with greeting if entry point context provided
     const startingMessages = useMemo(() => {
@@ -79,8 +118,18 @@ export function ChatWindow({
                 },
             ];
         }
+        if (welcomeMessage) {
+            return [
+                {
+                    id: crypto.randomUUID(),
+                    role: "assistant" as const,
+                    content: welcomeMessage,
+                    createdAt: new Date(),
+                },
+            ];
+        }
         return [];
-    }, [initialMessages, contextConfig?.greeting]);
+    }, [initialMessages, contextConfig?.greeting, welcomeMessage]);
 
     const [messages, setMessages] = useState<Message[]>(startingMessages);
     const [streamingContent, setStreamingContent] = useState("");
@@ -163,6 +212,21 @@ export function ChatWindow({
                                 setStreamingContent(accumulatedText);
                             } else if (parsed.type === "tools" && parsed.results) {
                                 toolResults = parsed.results;
+                                // Process gamification events from tool results
+                                for (const tr of parsed.results) {
+                                    const r = tr.result as Record<string, unknown>;
+                                    if (r?.xpGained && typeof r.xpGained === "number" && r.xpGained > 0) {
+                                        showXPToast(r.xpGained, r.stageAdvanced ? "Стадия завершена!" : "Прогресс!");
+                                    }
+                                    if (r?.leveledUp && typeof r.newLevel === "number") {
+                                        showLevelUp(r.newLevel);
+                                    }
+                                    if (r?.celebrationEvent === "stage_complete" || r?.stageAdvanced) {
+                                        triggerConfetti();
+                                        // Emit custom event for JourneyMap unlock animation
+                                        window.dispatchEvent(new CustomEvent("stage-advanced", { detail: { newStage: r.newStage } }));
+                                    }
+                                }
                             }
                         } catch {
                             // skip malformed

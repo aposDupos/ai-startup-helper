@@ -75,6 +75,13 @@ export async function executeSaveIdea(
                 description: input.description,
                 stage: "idea",
                 is_active: true,
+                progress_data: {
+                    idea: {
+                        status: "in_progress",
+                        completedItems: ["save_idea"],
+                        startedAt: new Date().toISOString(),
+                    },
+                },
             })
             .select("id")
             .single();

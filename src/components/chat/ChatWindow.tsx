@@ -23,6 +23,8 @@ interface ChatWindowProps {
     initialConversationId?: string;
     initialMessages?: Message[];
     projectStage?: string;
+    stageContext?: string;
+    checklistItemKey?: string;
 }
 
 export function ChatWindow({

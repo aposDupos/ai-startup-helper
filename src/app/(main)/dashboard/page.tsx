@@ -1,54 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import {
-    MessageCircle,
-    BarChart3,
-    BookOpen,
-    Lightbulb,
-    Flame,
     Star,
-    ArrowRight,
-    Plus,
+    Flame,
+    Lightbulb,
 } from "lucide-react";
-import Link from "next/link";
-
-const STAGES = [
-    { key: "idea", label: "Идея", emoji: "💡" },
-    { key: "validation", label: "Валидация", emoji: "🔍" },
-    { key: "business_model", label: "Бизнес-модель", emoji: "📊" },
-    { key: "mvp", label: "MVP", emoji: "⚡" },
-    { key: "pitch", label: "Питч", emoji: "🎤" },
-];
-
-const QUICK_ACTIONS = [
-    {
-        icon: MessageCircle,
-        label: "Начать чат с AI",
-        description: "Обсуди идею с наставником",
-        href: "/mentor",
-        gradient: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))",
-    },
-    {
-        icon: BarChart3,
-        label: "Заполнить BMC",
-        description: "Business Model Canvas",
-        href: "/workspace",
-        gradient: "linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600))",
-    },
-    {
-        icon: BookOpen,
-        label: "Начать урок",
-        description: "Академия стартапов",
-        href: "/academy",
-        gradient: "linear-gradient(135deg, var(--color-success-400), var(--color-success-500))",
-    },
-    {
-        icon: Lightbulb,
-        label: "Оценить идею",
-        description: "ICE Score от AI",
-        href: "/mentor",
-        gradient: "linear-gradient(135deg, #A78BFA, #7C3AED)",
-    },
-];
+import { JourneyMap } from "@/components/project/JourneyMap";
+import { CreateProjectWidget } from "@/components/project/CreateProjectWidget";
+import { TeamSection } from "@/components/project/TeamSection";
+import { getStageChecklists } from "./actions";
+import type {
+    ProgressData,
+    StageKey,
+    TeamMember,
+    ChecklistItemData,
+} from "@/types/project";
 
 export default async function DashboardPage() {
     const supabase = await createClient();
@@ -71,6 +36,19 @@ export default async function DashboardPage() {
 
     const activeProject = projects?.[0];
 
+    // Load checklists for Journey Map
+    let checklists: ChecklistItemData[] = [];
+    if (activeProject) {
+        checklists = (await getStageChecklists()) as ChecklistItemData[];
+    }
+
+    const progressData: ProgressData =
+        (activeProject?.progress_data as ProgressData) || {};
+    const currentStage: StageKey =
+        (activeProject?.stage as StageKey) || "idea";
+    const teamMembers: TeamMember[] =
+        (activeProject?.team_members as TeamMember[]) || [];
+
     return (
         <div className="space-y-6">
             {/* Welcome Header */}
@@ -85,212 +63,151 @@ export default async function DashboardPage() {
                 </p>
             </div>
 
-            {/* Stage Progress */}
-            <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
-                <h3 className="text-h4 text-surface-900 mb-4">Путь основателя</h3>
-                <div className="flex items-center justify-between">
-                    {STAGES.map((stage, i) => {
-                        const currentStageIndex = activeProject
-                            ? STAGES.findIndex((s) => s.key === activeProject.stage)
-                            : 0;
-                        const isCompleted = i < currentStageIndex;
-                        const isCurrent = i === currentStageIndex;
+            {activeProject ? (
+                <>
+                    {/* Journey Map */}
+                    <JourneyMap
+                        currentStage={currentStage}
+                        progressData={progressData}
+                        projectId={activeProject.id}
+                        checklists={checklists}
+                    />
 
-                        return (
-                            <div key={stage.key} className="flex items-center gap-0 flex-1">
-                                <div className="flex flex-col items-center gap-1.5">
-                                    <div
-                                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all"
-                                        style={{
-                                            backgroundColor: isCompleted
-                                                ? "var(--color-primary-500)"
-                                                : isCurrent
-                                                    ? "var(--color-primary-50)"
-                                                    : "var(--color-surface-100)",
-                                            border: isCurrent
-                                                ? "2px solid var(--color-primary-500)"
-                                                : "2px solid transparent",
-                                            boxShadow: isCurrent
-                                                ? "var(--shadow-glow-primary)"
-                                                : "none",
-                                        }}
-                                    >
-                                        {isCompleted ? (
-                                            <span className="text-white text-sm">✓</span>
-                                        ) : (
-                                            stage.emoji
-                                        )}
-                                    </div>
-                                    <span
-                                        className="text-caption font-medium"
-                                        style={{
-                                            color: isCurrent
-                                                ? "var(--color-primary-600)"
-                                                : "var(--color-text-secondary)",
-                                        }}
-                                    >
-                                        {stage.label}
-                                    </span>
-                                </div>
-                                {i < STAGES.length - 1 && (
-                                    <div
-                                        className="flex-1 h-0.5 mx-2"
-                                        style={{
-                                            backgroundColor:
-                                                i < currentStageIndex
-                                                    ? "var(--color-primary-500)"
-                                                    : "var(--color-surface-200)",
-                                        }}
-                                    />
-                                )}
+                    {/* AI Recommendation + Team row */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {/* AI Recommendation */}
+                        <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-lg">🤖</span>
+                                <h3 className="text-h4 text-surface-900">Что дальше?</h3>
                             </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div>
-                <h3 className="text-h4 text-surface-900 mb-3">Быстрые действия</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {QUICK_ACTIONS.map((action) => {
-                        const Icon = action.icon;
-                        return (
-                            <Link
-                                key={action.label}
-                                href={action.href}
-                                className="group p-4 rounded-xl bg-surface-0 border border-surface-200 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-                            >
-                                <div
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white mb-3"
-                                    style={{ background: action.gradient }}
-                                >
-                                    <Icon size={20} strokeWidth={1.75} />
-                                </div>
-                                <h4 className="text-body-sm font-semibold text-surface-900">
-                                    {action.label}
-                                </h4>
-                                <p className="text-caption text-surface-400 mt-0.5">
-                                    {action.description}
-                                </p>
-                                <ArrowRight
-                                    size={14}
-                                    className="mt-2 text-surface-300 group-hover:text-primary-500 transition-colors group-hover:translate-x-1 transition-transform"
-                                />
-                            </Link>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* XP + Streak row */}
-            <div className="grid md:grid-cols-2 gap-4">
-                {/* XP Card */}
-                <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-h4 text-surface-900">Прогресс</h3>
-                        <div className="flex items-center gap-1.5">
-                            <Star
-                                size={16}
-                                strokeWidth={1.75}
-                                className="text-accent-500"
-                            />
-                            <span
-                                className="text-body-sm font-bold"
-                                style={{
-                                    fontFamily: "var(--font-mono)",
-                                    color: "var(--color-accent-500)",
-                                }}
-                            >
-                                {profile?.xp || 0} XP
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white text-h4 font-bold"
-                            style={{
-                                background:
-                                    "linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600))",
-                                boxShadow: "var(--shadow-glow-primary)",
-                            }}
-                        >
-                            {profile?.level || 1}
-                        </div>
-                        <div>
-                            <p className="text-body-sm font-semibold text-surface-900">
-                                Уровень {profile?.level || 1}
-                            </p>
-                            <p className="text-caption text-surface-400">
-                                Ещё {1000 - ((profile?.xp || 0) % 1000)} XP до следующего
+                            <p className="text-body-sm text-surface-600">
+                                {getRecommendation(currentStage, progressData, checklists)}
                             </p>
                         </div>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-surface-100">
-                        <div
-                            className="h-2 rounded-full transition-all"
-                            style={{
-                                width: `${((profile?.xp || 0) % 1000) / 10}%`,
-                                background:
-                                    "linear-gradient(90deg, var(--color-primary-400), var(--color-primary-600))",
-                            }}
+
+                        {/* Team Section */}
+                        <TeamSection
+                            projectId={activeProject.id}
+                            initialMembers={teamMembers}
                         />
                     </div>
-                </div>
 
-                {/* Streak Card */}
-                <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
-                    <h3 className="text-h4 text-surface-900 mb-3">Серия</h3>
-                    <div className="flex items-center gap-3">
-                        <span className="text-4xl animate-wiggle">🔥</span>
-                        <div>
-                            <p
-                                className="text-h2"
-                                style={{
-                                    fontFamily: "var(--font-mono)",
-                                    color: "var(--color-surface-900)",
-                                }}
-                            >
-                                {profile?.streak_count || 0}
-                            </p>
-                            <p className="text-body-sm text-surface-500">
-                                {(profile?.streak_count || 0) > 0
-                                    ? "дней подряд!"
-                                    : "Начни серию сегодня!"}
-                            </p>
+                    {/* XP + Streak row */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {/* XP Card */}
+                        <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-h4 text-surface-900">Прогресс</h3>
+                                <div className="flex items-center gap-1.5">
+                                    <Star
+                                        size={16}
+                                        strokeWidth={1.75}
+                                        className="text-accent-500"
+                                    />
+                                    <span
+                                        className="text-body-sm font-bold"
+                                        style={{
+                                            fontFamily: "var(--font-mono)",
+                                            color: "var(--color-accent-500)",
+                                        }}
+                                    >
+                                        {profile?.xp || 0} XP
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div
+                                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-h4 font-bold"
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600))",
+                                        boxShadow: "var(--shadow-glow-primary)",
+                                    }}
+                                >
+                                    {profile?.level || 1}
+                                </div>
+                                <div>
+                                    <p className="text-body-sm font-semibold text-surface-900">
+                                        Уровень {profile?.level || 1}
+                                    </p>
+                                    <p className="text-caption text-surface-400">
+                                        Ещё {1000 - ((profile?.xp || 0) % 1000)} XP до следующего
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="w-full h-2 rounded-full bg-surface-100">
+                                <div
+                                    className="h-2 rounded-full transition-all"
+                                    style={{
+                                        width: `${((profile?.xp || 0) % 1000) / 10}%`,
+                                        background:
+                                            "linear-gradient(90deg, var(--color-primary-400), var(--color-primary-600))",
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Streak Card */}
+                        <div className="p-6 rounded-xl bg-surface-0 border border-surface-200 shadow-sm">
+                            <h3 className="text-h4 text-surface-900 mb-3">Серия</h3>
+                            <div className="flex items-center gap-3">
+                                <span className="text-4xl animate-wiggle">🔥</span>
+                                <div>
+                                    <p
+                                        className="text-h2"
+                                        style={{
+                                            fontFamily: "var(--font-mono)",
+                                            color: "var(--color-surface-900)",
+                                        }}
+                                    >
+                                        {profile?.streak_count || 0}
+                                    </p>
+                                    <p className="text-body-sm text-surface-500">
+                                        {(profile?.streak_count || 0) > 0
+                                            ? "дней подряд!"
+                                            : "Начни серию сегодня!"}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Empty state: no project */}
-            {!activeProject && (
-                <div className="p-8 rounded-xl border-2 border-dashed border-surface-200 text-center">
-                    <Lightbulb
-                        size={40}
-                        strokeWidth={1.75}
-                        className="mx-auto mb-4 text-surface-300"
-                    />
-                    <h3 className="text-h3 text-surface-900 mb-2">
-                        Ещё нет проекта?
-                    </h3>
-                    <p className="text-body text-surface-500 mb-4 max-w-[400px] mx-auto">
-                        Создай свой первый стартап-проект или расскажи идею AI-наставнику.
-                    </p>
-                    <Link href="/mentor">
-                        <button
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white cursor-pointer"
-                            style={{
-                                background:
-                                    "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))",
-                            }}
-                        >
-                            <Plus size={18} strokeWidth={1.75} />
-                            Создать проект
-                        </button>
-                    </Link>
-                </div>
+                </>
+            ) : (
+                /* No project — show entry points */
+                <CreateProjectWidget />
             )}
         </div>
     );
+}
+
+// ---------------------------------------------------------------------------
+// Helper: AI recommendation based on progress
+// ---------------------------------------------------------------------------
+
+function getRecommendation(
+    currentStage: StageKey,
+    progressData: ProgressData,
+    checklists: ChecklistItemData[]
+): string {
+    const stageItems = checklists.filter((c) => c.stage === currentStage);
+    const completed = progressData[currentStage]?.completedItems?.length || 0;
+    const total = stageItems.length;
+
+    if (total === 0) return "Загрузи данные проекта, чтобы получить рекомендации.";
+
+    if (completed === 0) {
+        const first = stageItems[0];
+        return `Начни с первого пункта: «${first.label}». Это поможет двигаться дальше!`;
+    }
+
+    if (completed < total) {
+        const remaining = stageItems.filter(
+            (item) => !progressData[currentStage]?.completedItems?.includes(item.item_key)
+        );
+        const next = remaining[0];
+        return `Отлично, ${completed} из ${total} сделано! Следующий шаг: «${next?.label}».`;
+    }
+
+    return "Все пункты текущей стадии выполнены! Пора переходить к следующему этапу. 🎉";
 }

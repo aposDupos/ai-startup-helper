@@ -1,20 +1,19 @@
-# Sprint 05 — Pitch + RAG (Июль 2026, ~3 недели)
+# Sprint 05 — Pitch + Gamification (Июль 2026, ~3 недели)
 
-**Секция плана:** `.backlog/mvp/v1/sections/section-05-pitch-rag.md`
-**Цель:** Полный путь до питча, RAG для качества AI.
-**Зависимости:** Sprint 01–03 завершены (BMC данные нужны для Pitch Deck).
+**Цель:** Завершение пути стартапа (питч) + вовлечение через геймификацию.
+**Зависимости:** Sprint 03–04 завершены.
 
 ---
 
-## Задачи
+## Pitch
 
-### S05-001: Миграция БД — pitch_decks
+### S05-001: Миграция — pitch_decks
 **Статус:** [ ]
-**Зависимости:** S01-005
+**Зависимости:** S03-001
 **Описание:** Таблица для Pitch Deck данных.
 **Действия:**
-- Создать `supabase/migrations/005_pitch_decks.sql`
-- Таблица `pitch_decks`: id, project_id, slides (JSONB), template, created_at, updated_at
+- Создать `supabase/migrations/006_pitch_decks.sql`
+- `pitch_decks`: id, project_id, slides (JSONB), template, created_at, updated_at
 - RLS policies
 **Критерии приёмки:**
 - [ ] Миграция применяется
@@ -22,87 +21,126 @@
 
 ---
 
-### S05-002: Pitch Deck Wizard UI
+### S05-002: Pitch Deck Wizard
 **Статус:** [ ]
-**Зависимости:** S05-001
-**Описание:** Wizard для создания Pitch Deck из 10 слайдов.
+**Зависимости:** S05-001, S04-001
+**Описание:** Step-by-step wizard на отдельной странице.
 **Действия:**
-- Создать `src/app/(main)/workspace/pitch/page.tsx`
-- Создать `src/components/workspace/PitchDeckWizard.tsx` — step-by-step wizard
-- Создать `src/components/workspace/PitchSlide.tsx` — отдельный слайд
+- Создать `src/app/(main)/workspace/pitch/page.tsx` — full-page с «← Назад к карте»
+- Создать `src/components/workspace/PitchDeckWizard.tsx`
 - 10 слайдов: Обложка, Проблема, Решение, Рынок, Продукт, Бизнес-модель, Конкуренты, Юнит-экономика, Команда, Roadmap
-- На каждом шаге: AI предлагает текст, пользователь редактирует
-- Данные из BMC подтягиваются автоматически (слайд 6)
+- AI генерирует текст для каждого слайда
+- BMC данные подтягиваются автоматически (слайд 6)
+- Autosave + progress_data обновление
 **Критерии приёмки:**
-- [ ] 10 шагов wizard работают
-- [ ] AI генерирует контент для каждого слайда
-- [ ] BMC данные автоматически заполняют слайд бизнес-модели
-- [ ] Данные сохраняются в `pitch_decks.slides`
+- [ ] 10 шагов wizard
+- [ ] AI генерирует контент
+- [ ] BMC auto-fill
+- [ ] Auto-save
 
 ---
 
 ### S05-003: Тренажёр питча
 **Статус:** [ ]
 **Зависимости:** S05-002
-**Описание:** AI играет роль инвестора и задаёт вопросы.
+**Описание:** AI играет роль инвестора.
 **Действия:**
 - Создать `src/app/(main)/workspace/pitch/trainer/page.tsx`
-- Создать `src/components/workspace/PitchTrainer.tsx` — чат-интерфейс тренажёра
-- Создать `src/components/workspace/PitchFeedback.tsx` — фидбэк после сессии
-- Обновить `src/lib/ai/agents/pitch.ts` — PitchAgent в режиме «инвестор»
+- Создать `src/components/workspace/PitchTrainer.tsx`
+- Создать `src/components/workspace/PitchFeedback.tsx`
 - 5–10 раундов Q&A → фидбэк по 5 критериям
 **Критерии приёмки:**
-- [ ] AI задаёт вопросы как инвестор
-- [ ] 5–10 раундов Q&A
-- [ ] Фидбэк: оценки по 5 критериям + рекомендации
+- [ ] AI = инвестор, задаёт вопросы
+- [ ] Фидбэк: оценки + рекомендации
 - [ ] Результаты сохраняются
 
 ---
 
-### S05-004: Экспорт Pitch Deck в PDF
+### S05-004: Экспорт Pitch в PDF
 **Статус:** [ ]
 **Зависимости:** S05-002
-**Описание:** Красивый PDF-экспорт Pitch Deck.
+**Описание:** PDF Pitch Deck.
 **Действия:**
 - Создать `src/lib/export/pitch-pdf.ts`
-- Шаблон: каждый слайд — страница, сберовские цвета
 - API route: `src/app/api/export/pitch/route.ts`
 **Критерии приёмки:**
-- [ ] PDF генерируется с 10 слайдами
-- [ ] Визуально привлекательный документ
-- [ ] Скачивается по клику
+- [ ] PDF с 10 слайдами, визуально привлекательный
 
 ---
 
-### S05-005: Полный RAG pipeline
+## Gamification
+
+### S05-005: Миграция — gamification
+**Статус:** [ ]
+**Зависимости:** S03-001
+**Описание:** Таблицы для XP, уровней, достижений, стриков.
+**Действия:**
+- Создать `supabase/migrations/007_gamification.sql`
+- Таблицы: achievements, user_achievements, xp_transactions, levels, challenges, user_challenges
+- Seed data: 5 levels, 15+ achievements
+- RLS policies
+**Критерии приёмки:**
+- [ ] Таблицы + seed data
+- [ ] RLS: пользователь видит свой прогресс
+
+---
+
+### S05-006: XP + Levels
+**Статус:** [ ]
+**Зависимости:** S05-005
+**Описание:** Начисление XP, проверка level up.
+**Действия:**
+- Создать `src/lib/gamification/xp.ts` — awardXP(userId, amount, source)
+- Toast «+30 XP» с анимацией
+- Level up модалка
+**Критерии приёмки:**
+- [ ] XP начисляется
+- [ ] Level повышается при достижении порога
+- [ ] Toast + модалка при level up
+
+---
+
+### S05-007: Badges
+**Статус:** [ ]
+**Зависимости:** S05-006
+**Описание:** 15+ достижений.
+**Действия:**
+- Создать `src/lib/gamification/achievements.ts`
+- Создать `src/components/gamification/AchievementGrid.tsx`
+- Создать `src/components/gamification/AchievementUnlockedModal.tsx`
+**Критерии приёмки:**
+- [ ] Бейджи: unlocked цветные, locked серые
+- [ ] Модалка «Достижение получено!»
+
+---
+
+### S05-008: Стрики + Лидерборд
+**Статус:** [ ]
+**Зависимости:** S05-006
+**Описание:** Стрики + топ пользователей.
+**Действия:**
+- Создать `src/lib/gamification/streaks.ts`
+- Создать `src/app/(main)/leaderboard/page.tsx`
+- Создать `src/components/gamification/StreakFlame.tsx`
+- Создать `src/components/gamification/LeaderboardTable.tsx`
+**Критерии приёмки:**
+- [ ] Стрик увеличивается ежедневно
+- [ ] Бонус XP на milestone (7, 14, 30 дней)
+- [ ] Лидерборд с топ 100
+
+---
+
+## RAG
+
+### S05-009: Полный RAG pipeline
 **Статус:** [ ]
 **Зависимости:** S02-010
-**Описание:** Расширить RAG: 10+ документов, оптимизация quality.
+**Описание:** 10+ документов базы знаний для AI.
 **Действия:**
-- Создать `content/knowledge/*.md` — 10 документов базы знаний
-- Обновить `src/lib/ai/rag/loader.ts` — chunking по заголовкам + recursive
-- Обновить `src/lib/ai/rag/search.ts` — оптимизация: reranking, threshold
-- Создать `scripts/seed-knowledge.ts` — загрузка всех документов
-- Интегрировать RAG во все 5 AI-агентов
+- Создать `content/knowledge/*.md` — 10 документов
+- Обновить loader + search (chunking, reranking)
+- Создать `scripts/seed-knowledge.ts`
+- Интегрировать RAG во все AI-агенты
 **Критерии приёмки:**
-- [ ] 10+ документов загружены и проиндексированы
-- [ ] Similarity search возвращает качественные результаты
-- [ ] RAG интегрирован во все агенты
-- [ ] Качество ответов заметно выше
-
----
-
-### S05-006: Agent Tools — validation + mvp
-**Статус:** [ ]
-**Зависимости:** S02-004
-**Описание:** Дополнительные tools для остальных этапов.
-**Действия:**
-- Создать `src/lib/ai/tools/simulate-custdev.ts` — симуляция CustDev
-- Создать `src/lib/ai/tools/analyze-competitors.ts` — анализ конкурентов
-- Создать `src/lib/ai/tools/recommend-nocode.ts` — рекомендация No-code
-- Создать `src/lib/ai/tools/generate-user-stories.ts` — user stories
-- Обновить validation и mvp агентов
-**Критерии приёмки:**
-- [ ] Все tools вызываются через function calling
-- [ ] CustDev симуляция генерирует реалистичные ответы
-- [ ] User stories генерируются в правильном формате
+- [ ] 10+ документов проиндексированы
+- [ ] Качество AI ответов заметно выше

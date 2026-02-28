@@ -182,12 +182,57 @@ ${BASE_RULES}
 `.trim();
 
 // ---------------------------------------------------------------------------
+// Project context injection
+// ---------------------------------------------------------------------------
+
+export interface ProjectContext {
+    id: string;
+    title: string;
+    description: string | null;
+    stage: string;
+    completedItems: string[];
+    totalItems: number;
+    remainingItems: string[];
+}
+
+function buildProjectContext(project: ProjectContext | null): string {
+    if (!project) {
+        return `\nУ ПОЛЬЗОВАТЕЛЯ НЕТ АКТИВНОГО ПРОЕКТА.\nПредложи ему создать проект, используя инструмент save_idea или create_project_with_stage.\n`;
+    }
+
+    const stageLabels: Record<string, string> = {
+        idea: "Идея",
+        validation: "Валидация",
+        business_model: "Бизнес-модель",
+        mvp: "MVP",
+        pitch: "Питч",
+    };
+
+    return `
+ТЕКУЩИЙ ПРОЕКТ ПОЛЬЗОВАТЕЛЯ:
+- ID проекта: ${project.id}
+- Название: «${project.title}»
+- Описание: ${project.description || "не указано"}
+- Текущая стадия: ${stageLabels[project.stage] || project.stage}
+- Прогресс: ${project.completedItems.length}/${project.totalItems} пунктов выполнено
+${project.completedItems.length > 0 ? `- Выполнено: ${project.completedItems.join(", ")}` : ""}
+${project.remainingItems.length > 0 ? `- Осталось сделать: ${project.remainingItems.join(", ")}` : "- Все пункты текущей стадии выполнены!"}
+
+ПРАВИЛА РАБОТЫ С ПРОЕКТОМ:
+- Когда помогаешь с пунктом чеклиста — используй complete_checklist_item чтобы отметить его
+- Обращайся к проекту по названию
+- Предлагай следующий логичный шаг из оставшихся пунктов
+`.trim();
+}
+
+// ---------------------------------------------------------------------------
 // Builder
 // ---------------------------------------------------------------------------
 
 export function buildSystemPrompt(
     stage: StageContext,
-    role: UserRole = "student"
+    role: UserRole = "student",
+    project: ProjectContext | null = null
 ): string {
     const prompts: Record<StageContext, (role: UserRole) => string> = {
         idea_search: ideaSearchPrompt,
@@ -198,5 +243,8 @@ export function buildSystemPrompt(
         general: generalPrompt,
     };
 
-    return prompts[stage](role);
+    const basePrompt = prompts[stage](role);
+    const projectContext = buildProjectContext(project);
+
+    return `${basePrompt}\n\n${projectContext}`;
 }

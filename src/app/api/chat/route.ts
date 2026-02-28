@@ -1,13 +1,9 @@
-/**
- * Chat API Route — POST /api/chat
- * Accepts a message, streams the AI response, saves messages to DB.
- */
-
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAgentStreaming, type GigaChatMessageInput } from "@/lib/ai/agents/router";
 import { logAICall } from "@/lib/ai/observability";
-import type { StageContext, UserRole } from "@/lib/ai/prompts";
+import type { StageContext, UserRole, ProjectContext } from "@/lib/ai/prompts";
+import type { ProgressData } from "@/types/project";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -41,8 +37,10 @@ export async function POST(req: Request) {
     const {
         message,
         conversationId: existingConversationId,
-        contextType = "general",
+        contextType: rawContextType,
     } = body;
+
+    const contextType = rawContextType || "general";
 
     if (!message?.trim()) {
         return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -56,6 +54,46 @@ export async function POST(req: Request) {
         .single();
 
     const userRole: UserRole = (profile?.role as UserRole) ?? "student";
+
+    // 3b. Load active project + checklists for context injection
+    let projectContext: ProjectContext | null = null;
+
+    const { data: activeProject } = await supabase
+        .from("projects")
+        .select("id, title, description, stage, progress_data")
+        .eq("owner_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+    if (activeProject) {
+        const progressData = (activeProject.progress_data as ProgressData) || {};
+        const currentStage = activeProject.stage || "idea";
+        const stageProgress = progressData[currentStage as keyof ProgressData];
+        const completedItems = stageProgress?.completedItems || [];
+
+        // Load checklist items for the current stage
+        const { data: checklistItems } = await supabase
+            .from("stage_checklists")
+            .select("item_key, label")
+            .eq("stage", currentStage)
+            .order("sort_order", { ascending: true });
+
+        const allItemKeys = (checklistItems || []).map((c) => c.item_key);
+        const remainingItems = allItemKeys.filter((k) => !completedItems.includes(k));
+        const remainingLabels = (checklistItems || [])
+            .filter((c) => !completedItems.includes(c.item_key))
+            .map((c) => c.label);
+
+        projectContext = {
+            id: activeProject.id,
+            title: activeProject.title,
+            description: activeProject.description,
+            stage: currentStage,
+            completedItems,
+            totalItems: allItemKeys.length,
+            remainingItems: remainingLabels,
+        };
+    }
 
     // 4. Get or create conversation
     let conversationId = existingConversationId;
@@ -72,8 +110,9 @@ export async function POST(req: Request) {
             .single();
 
         if (convError || !newConv) {
+            console.error("[Chat] Failed to create conversation:", convError);
             return NextResponse.json(
-                { error: "Failed to create conversation" },
+                { error: "Failed to create conversation", details: convError?.message },
                 { status: 500 }
             );
         }
@@ -88,10 +127,12 @@ export async function POST(req: Request) {
         .order("created_at", { ascending: true })
         .limit(20);
 
-    const history: GigaChatMessageInput[] = (historyRows ?? []).map((m) => ({
-        role: m.role as GigaChatMessageInput["role"],
-        content: m.content,
-    }));
+    const history: GigaChatMessageInput[] = (historyRows ?? [])
+        .filter((m) => m.content && m.content.trim() !== "")
+        .map((m) => ({
+            role: m.role as GigaChatMessageInput["role"],
+            content: m.content,
+        }));
 
     // 6. Save user message
     await supabase.from("messages").insert({
@@ -111,7 +152,8 @@ export async function POST(req: Request) {
             history,
             contextType as StageContext,
             userRole,
-            user.id
+            user.id,
+            projectContext
         );
 
         // Create SSE response stream

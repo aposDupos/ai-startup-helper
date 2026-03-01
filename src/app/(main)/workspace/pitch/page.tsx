@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { PitchDeckSlides } from "@/types/pitch";
 import { createEmptySlides } from "@/types/pitch";
+import { ReviewRequestButton } from "@/components/social/ReviewRequestButton";
 
 export default async function PitchPage() {
     const supabase = await createClient();
@@ -68,13 +69,16 @@ export default async function PitchPage() {
             </div>
 
             {/* Header */}
-            <div>
-                <h1 className="text-h1 text-surface-900">
-                    🎤 Pitch Deck
-                </h1>
-                <p className="text-body text-surface-500 mt-1">
-                    Создай убедительный питч-дек для проекта «{project.title}»
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-h1 text-surface-900">
+                        🎤 Pitch Deck
+                    </h1>
+                    <p className="text-body text-surface-500 mt-1">
+                        Создай убедительный питч-дек для проекта «{project.title}»
+                    </p>
+                </div>
+                <ReviewRequestButton projectId={project.id} artifactType="pitch" />
             </div>
 
             {/* Wizard */}

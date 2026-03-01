@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { VPCData } from "@/types/workspace";
 import { createEmptyVPCData } from "@/types/workspace";
+import { ReviewRequestButton } from "@/components/social/ReviewRequestButton";
 
 export default async function VPCPage() {
     const supabase = await createClient();
@@ -39,13 +40,16 @@ export default async function VPCPage() {
                 </Link>
             </div>
 
-            <div>
-                <h1 className="text-h1 text-surface-900">
-                    Value Proposition Canvas
-                </h1>
-                <p className="text-body text-surface-500 mt-1">
-                    Определи ценностное предложение для проекта «{project.title}»
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-h1 text-surface-900">
+                        Value Proposition Canvas
+                    </h1>
+                    <p className="text-body text-surface-500 mt-1">
+                        Определи ценностное предложение для проекта «{project.title}»
+                    </p>
+                </div>
+                <ReviewRequestButton projectId={project.id} artifactType="vpc" />
             </div>
 
             <VPCCanvas projectId={project.id} initialData={vpcData} />

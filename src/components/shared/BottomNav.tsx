@@ -8,13 +8,14 @@ import {
     Wrench,
     BookOpen,
     Award,
+    Globe,
 } from "lucide-react";
 
 const navItems = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/chat", label: "Chat", icon: MessageCircle },
     { href: "/workspace", label: "Work", icon: Wrench },
-    { href: "/learning", label: "Learning", icon: BookOpen },
+    { href: "/discover", label: "Галерея", icon: Globe },
     { href: "/gamification", label: "Достижения", icon: Award },
 ];
 

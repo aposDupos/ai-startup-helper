@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { BMCData } from "@/types/workspace";
 import { createEmptyBMCData } from "@/types/workspace";
+import { ReviewRequestButton } from "@/components/social/ReviewRequestButton";
 
 export default async function BMCPage() {
     const supabase = await createClient();
@@ -41,13 +42,16 @@ export default async function BMCPage() {
             </div>
 
             {/* Header */}
-            <div>
-                <h1 className="text-h1 text-surface-900">
-                    Business Model Canvas
-                </h1>
-                <p className="text-body text-surface-500 mt-1">
-                    Заполни 9 блоков бизнес-модели проекта «{project.title}»
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-h1 text-surface-900">
+                        Business Model Canvas
+                    </h1>
+                    <p className="text-body text-surface-500 mt-1">
+                        Заполни 9 блоков бизнес-модели проекта «{project.title}»
+                    </p>
+                </div>
+                <ReviewRequestButton projectId={project.id} artifactType="bmc" />
             </div>
 
             {/* Canvas */}

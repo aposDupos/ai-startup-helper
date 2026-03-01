@@ -9,8 +9,11 @@ import { CreateProjectWidget } from "@/components/project/CreateProjectWidget";
 import { TeamSection } from "@/components/project/TeamSection";
 import { ProjectPassport } from "@/components/project/ProjectPassport";
 import { MicroLessonCard } from "@/components/learning/MicroLessonCard";
+import { ScorecardRadar } from "@/components/project/ScorecardRadar";
+import { ScorecardHistory } from "@/components/project/ScorecardHistory";
 import { getStageChecklists, getLessonsMap } from "./actions";
 import { getRandomMicroLesson } from "@/app/(main)/learning/actions";
+import { saveScorecard } from "@/lib/scoring/scorecard";
 import type {
     ProgressData,
     StageKey,
@@ -53,6 +56,23 @@ export default async function DashboardPage() {
     // Micro lesson for dashboard
     const microLesson = await getRandomMicroLesson();
 
+    // Compute and save scorecard
+    let scorecardData = null;
+    let scorecardHistory: { score: number; created_at: string }[] = [];
+    if (activeProject) {
+        scorecardData = await saveScorecard(activeProject.id);
+
+        // Fetch scorecard history
+        const { data: historyData } = await supabase
+            .from("scorecard_history")
+            .select("score, created_at")
+            .eq("project_id", activeProject.id)
+            .order("created_at", { ascending: true })
+            .limit(30);
+
+        scorecardHistory = historyData || [];
+    }
+
     const progressData: ProgressData =
         (activeProject?.progress_data as ProgressData) || {};
     const currentStage: StageKey =
@@ -93,6 +113,17 @@ export default async function DashboardPage() {
                         artifacts={projectArtifacts}
                         currentStage={currentStage}
                     />
+
+                    {/* Scorecard section */}
+                    {scorecardData && (
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <ScorecardRadar
+                                criteria={scorecardData.criteria}
+                                total={scorecardData.total}
+                            />
+                            <ScorecardHistory history={scorecardHistory} />
+                        </div>
+                    )}
 
                     {/* AI Recommendation + Team row */}
                     <div className="grid md:grid-cols-2 gap-4">

@@ -78,7 +78,7 @@ export function JourneyMap({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" data-journey-map>
             {/* Journey path header */}
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-h4 text-surface-900">Путь основателя</h3>

@@ -17,6 +17,12 @@ import { getStageChecklists, getLessonsMap } from "./actions";
 import { getRandomMicroLesson } from "@/app/(main)/learning/actions";
 import { saveScorecard } from "@/lib/scoring/scorecard";
 import { PublishButton } from "@/components/social/PublishButton";
+import { DailyQuestCard } from "@/components/gamification/DailyQuestCard";
+import { StreakFreezeWrapper } from "@/components/gamification/StreakFreezeWrapper";
+import { WeeklyReportCard } from "@/components/gamification/WeeklyReportCard";
+import { generateDailyQuest, getQuestActionUrl } from "@/lib/gamification/daily-quest";
+import { checkStreakFreeze } from "@/lib/gamification/streaks";
+import { getWeeklyReport, shouldShowWeeklyReport } from "@/lib/reporting/weekly";
 import type {
     ProgressData,
     StageKey,
@@ -74,6 +80,39 @@ export default async function DashboardPage() {
             .limit(30);
 
         scorecardHistory = historyData || [];
+    }
+
+    // Daily Quest
+    let dailyQuest = null;
+    let questActionUrl = "/dashboard";
+    if (activeProject) {
+        try {
+            dailyQuest = await generateDailyQuest(user!.id, activeProject.id);
+            questActionUrl = await getQuestActionUrl(dailyQuest);
+        } catch {
+            // Quest generation may fail on edge cases, ignore
+        }
+    }
+
+    // Streak freeze check
+    let freezeInfo = null;
+    try {
+        freezeInfo = await checkStreakFreeze(user!.id);
+    } catch {
+        // Ignore
+    }
+
+    // Weekly report (show on Mondays)
+    let weeklyReport = null;
+    if (activeProject) {
+        try {
+            const showReport = await shouldShowWeeklyReport(user!.id);
+            if (showReport) {
+                weeklyReport = await getWeeklyReport(user!.id, activeProject.id);
+            }
+        } catch {
+            // Ignore
+        }
     }
 
     // Fetch review notifications for user's project
@@ -182,6 +221,14 @@ export default async function DashboardPage() {
                         completedLessonIds={completedLessonIds}
                     />
 
+                    {/* Daily Quest */}
+                    {dailyQuest && (
+                        <DailyQuestCard
+                            quest={dailyQuest}
+                            actionUrl={questActionUrl}
+                        />
+                    )}
+
                     {/* Project Passport */}
                     <ProjectPassport
                         artifacts={projectArtifacts}
@@ -197,6 +244,11 @@ export default async function DashboardPage() {
                             />
                             <ScorecardHistory history={scorecardHistory} />
                         </div>
+                    )}
+
+                    {/* Weekly Report (Mondays) */}
+                    {weeklyReport && (
+                        <WeeklyReportCard report={weeklyReport} />
                     )}
 
                     {/* AI Recommendation + Team row */}
@@ -312,6 +364,15 @@ export default async function DashboardPage() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Streak Freeze Modal */}
+                    {freezeInfo && freezeInfo.streakAtRisk && (
+                        <StreakFreezeWrapper
+                            streakCount={freezeInfo.streakCount}
+                            streakAtRisk={freezeInfo.streakAtRisk}
+                            alreadyUsedThisWeek={freezeInfo.alreadyUsedThisWeek}
+                        />
+                    )}
                 </>
             ) : (
                 /* No project — show entry points */

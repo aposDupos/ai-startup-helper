@@ -7,6 +7,7 @@ import { searchKnowledge, formatRAGContext } from "@/lib/ai/rag/search";
 import type { StageContext, UserRole, ProjectContext } from "@/lib/ai/prompts";
 import { detectContextFromMessage } from "@/lib/ai/prompts";
 import type { ProgressData } from "@/types/project";
+import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,6 +28,15 @@ export async function POST(req: Request) {
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 1b. Rate limit check
+    const rateLimitResult = checkRateLimit(`chat:${user.id}`, RATE_LIMITS.chat);
+    if (!rateLimitResult.success) {
+        return NextResponse.json(
+            { error: "Слишком много запросов, подожди минутку ⏳" },
+            { status: 429, headers: rateLimitHeaders(rateLimitResult) }
+        );
     }
 
     // 2. Parse body

@@ -329,6 +329,19 @@ body {
   animation: spring-bounce var(--transition-spring);
 }
 
+/* Utility classes */
+.shadow-glow-primary {
+  box-shadow: var(--shadow-glow-primary);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600));
+}
+
+.gradient-primary-h {
+  background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-600));
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
 

@@ -18,6 +18,28 @@ export interface SuggestLessonResult {
     error?: string;
 }
 
+export const suggestLessonToolDefinition = {
+    name: "suggest_lesson",
+    description:
+        "Рекомендует пользователю подходящий урок из раздела обучения. Используй когда пользователь затрудняется, задаёт базовый вопрос, или просит совет по теме. Возвращает ссылку на конкретный урок.",
+    parameters: {
+        type: "object",
+        properties: {
+            stage: {
+                type: "string",
+                enum: ["idea", "validation", "business_model", "mvp", "pitch"],
+                description: "Стадия проекта для подбора урока",
+            },
+            topic: {
+                type: "string",
+                description:
+                    "Тема вопроса для поиска релевантного урока (например 'CustDev', 'BMC', 'питч')",
+            },
+        },
+        required: ["stage"],
+    },
+} as const;
+
 export async function executeSuggestLesson(
     input: SuggestLessonInput
 ): Promise<SuggestLessonResult> {

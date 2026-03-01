@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { awardXP } from "./xp";
+import { getUserToday, getUserYesterday, getWeekStartForTimezone, DEFAULT_TIMEZONE } from "@/lib/utils/date";
+import { logger } from "@/lib/logger";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -15,6 +17,20 @@ const STREAK_MILESTONES: Record<number, number> = {
     60: 200,
     100: 500,
 };
+
+// ---------------------------------------------------------------------------
+// Helpers: get user timezone from profile
+// ---------------------------------------------------------------------------
+
+async function getUserTimezone(userId: string): Promise<string> {
+    const supabase = await createClient();
+    const { data } = await supabase
+        .from("profiles")
+        .select("timezone")
+        .eq("id", userId)
+        .single();
+    return (data?.timezone as string) || DEFAULT_TIMEZONE;
+}
 
 // ---------------------------------------------------------------------------
 // Update streak
@@ -31,6 +47,7 @@ export interface StreakResult {
 
 export async function updateStreak(userId: string): Promise<StreakResult> {
     const supabase = await createClient();
+    const timezone = await getUserTimezone(userId);
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -38,7 +55,8 @@ export async function updateStreak(userId: string): Promise<StreakResult> {
         .eq("id", userId)
         .single();
 
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const today = getUserToday(timezone);
+    const yesterdayStr = getUserYesterday(timezone);
     const lastActive = profile?.streak_last_active;
     const currentStreak = profile?.streak_count || 0;
 
@@ -58,9 +76,6 @@ export async function updateStreak(userId: string): Promise<StreakResult> {
     let newStreak: number;
     let streakAtRisk = false;
     let canFreeze = false;
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
 
     if (lastActive === yesterdayStr) {
         // Continue streak
@@ -69,7 +84,6 @@ export async function updateStreak(userId: string): Promise<StreakResult> {
         // Streak broken — check for freeze
         const freezeInfo = await checkStreakFreeze(userId);
         if (freezeInfo.canFreeze) {
-            // Don't reset yet — let the user decide via modal
             streakAtRisk = true;
             canFreeze = true;
             return {
@@ -81,10 +95,8 @@ export async function updateStreak(userId: string): Promise<StreakResult> {
                 canFreeze,
             };
         }
-        // No freeze available — reset streak
         newStreak = 1;
     } else {
-        // First day or no active streak
         newStreak = 1;
     }
 
@@ -131,16 +143,9 @@ export interface StreakFreezeInfo {
     streakCount: number;
 }
 
-function getWeekStart(date: Date): string {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
-    d.setDate(diff);
-    return d.toISOString().split("T")[0];
-}
-
 export async function checkStreakFreeze(userId: string): Promise<StreakFreezeInfo> {
     const supabase = await createClient();
+    const timezone = await getUserTimezone(userId);
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -148,20 +153,15 @@ export async function checkStreakFreeze(userId: string): Promise<StreakFreezeInf
         .eq("id", userId)
         .single();
 
-    const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
-    const weekStart = getWeekStart(today);
+    const todayStr = getUserToday(timezone);
+    const yesterdayStr = getUserYesterday(timezone);
+    const weekStart = getWeekStartForTimezone(timezone);
 
     const lastActive = profile?.streak_last_active || null;
     const streakCount = profile?.streak_count || 0;
 
-    // Is streak at risk? (last active not today or yesterday)
     const streakAtRisk = streakCount > 0 && lastActive !== todayStr && lastActive !== yesterdayStr;
 
-    // Check if freeze already used this week
     const { data: existingFreeze } = await supabase
         .from("streak_freezes")
         .select("id")
@@ -178,6 +178,7 @@ export async function checkStreakFreeze(userId: string): Promise<StreakFreezeInf
 
 export async function useStreakFreeze(userId: string): Promise<{ success: boolean; message: string }> {
     const supabase = await createClient();
+    const timezone = await getUserTimezone(userId);
 
     const freezeInfo = await checkStreakFreeze(userId);
 
@@ -189,11 +190,10 @@ export async function useStreakFreeze(userId: string): Promise<{ success: boolea
         return { success: false, message: "Freeze уже использован на этой неделе" };
     }
 
-    const today = new Date();
-    const weekStart = getWeekStart(today);
-    const todayStr = today.toISOString().split("T")[0];
+    const weekStart = getWeekStartForTimezone(timezone);
+    const todayStr = getUserToday(timezone);
+    const yesterdayStr = getUserYesterday(timezone);
 
-    // Insert freeze record
     const { error } = await supabase.from("streak_freezes").insert({
         user_id: userId,
         used_at: todayStr,
@@ -207,11 +207,7 @@ export async function useStreakFreeze(userId: string): Promise<{ success: boolea
         throw error;
     }
 
-    // Preserve streak — update last_active to yesterday to prevent reset
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
-
+    // Preserve streak — update last_active to yesterday
     await supabase
         .from("profiles")
         .update({
@@ -236,6 +232,7 @@ export interface StreakInfo {
 
 export async function getStreakInfo(userId: string): Promise<StreakInfo> {
     const supabase = await createClient();
+    const timezone = await getUserTimezone(userId);
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -243,11 +240,10 @@ export async function getStreakInfo(userId: string): Promise<StreakInfo> {
         .eq("id", userId)
         .single();
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getUserToday(timezone);
     const count = profile?.streak_count || 0;
     const isActiveToday = profile?.streak_last_active === today;
 
-    // Find next milestone
     const milestones = Object.keys(STREAK_MILESTONES)
         .map(Number)
         .sort((a, b) => a - b);
@@ -261,4 +257,3 @@ export async function getStreakInfo(userId: string): Promise<StreakInfo> {
         daysToNextMilestone,
     };
 }
-

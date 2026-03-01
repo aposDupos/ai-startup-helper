@@ -37,6 +37,43 @@ const ARTIFACT_TO_CHECKLIST: Record<string, { stage: StageKey; itemKey: string }
     mvp_features: { stage: "mvp", itemKey: "define_features" },
 };
 
+export const updateProjectArtifactsToolDefinition = {
+    name: "update_project_artifacts",
+    description:
+        "Сохраняет важную информацию из диалога в проект пользователя. ОБЯЗАТЕЛЬНО вызывай когда пользователь сформулировал: проблему, целевую аудиторию, гипотезы, уникальное предложение, результаты CustDev, описание MVP-фич, конкурентов или модель монетизации.",
+    parameters: {
+        type: "object",
+        properties: {
+            projectId: {
+                type: "string",
+                description: "UUID проекта пользователя",
+            },
+            field: {
+                type: "string",
+                enum: [
+                    "problem",
+                    "target_audience",
+                    "idea_formulation",
+                    "hypotheses",
+                    "unique_value",
+                    "custdev_results",
+                    "competitors",
+                    "revenue_model",
+                    "mvp_features",
+                ],
+                description:
+                    "Тип артефакта: problem (проблема), target_audience (ЦА), idea_formulation (формулировка идеи), hypotheses (гипотеза — добавляется в список), unique_value (ценностное предложение), custdev_results (результаты CustDev), competitors (конкуренты), revenue_model (модель монетизации), mvp_features (фичи MVP)",
+            },
+            value: {
+                type: "string",
+                description:
+                    "Содержание артефакта — сжатая формулировка того, что обсудили с пользователем",
+            },
+        },
+        required: ["projectId", "field", "value"],
+    },
+} as const;
+
 export async function executeUpdateProjectArtifacts(
     input: UpdateProjectArtifactsInput
 ): Promise<UpdateProjectArtifactsResult> {

@@ -1,12 +1,11 @@
-# Sprint 14 — Social: Teams & Challenges (~1 нед)
-
-**Цель:** Групповые взаимодействия и командная работа.
+# Sprint 14 — Social: Teams & Challenges
+**Статус:** [ ]
 **Зависимости:** S13 (Social base).
 
 ---
 
 ## S14-001: Co-founder Matching
-**Статус:** [ ]
+**Статус:** [x]
 **Зависимости:** S13-001
 **Описание:** Пользователи заполняют навыки и ищут со-основателей с комплементарными навыками.
 **Действия:**
@@ -16,20 +15,20 @@
 - Алгоритм: комплементарные навыки + совпадение стадии проекта
 - Кнопка "Написать" → открывает чат/email
 **Файлы:**
-- `supabase/migrations/015_teams.sql` [NEW]
+- `supabase/migrations/017_teams_social.sql` [NEW]
 - `src/app/(main)/match/page.tsx` [NEW]
 - `src/components/social/MatchCard.tsx` [NEW]
 - `src/lib/matching/algorithm.ts` [NEW]
 **Критерии приёмки:**
-- [ ] Профиль: можно указать навыки и включить "ищу со-основателя"
-- [ ] `/match` — карточки с навыками, проектом, стадией
-- [ ] Комплементарность: dev видит маркетологов, и наоборот
-- [ ] Кнопка связи работает
+- [x] Профиль: можно указать навыки и включить "ищу со-основателя"
+- [x] `/match` — карточки с навыками, проектом, стадией
+- [x] Комплементарность: dev видит маркетологов, и наоборот
+- [x] Кнопка связи работает
 
 ---
 
 ## S14-002: Startup Challenges (недельные)
-**Статус:** [ ]
+**Статус:** [x]
 **Зависимости:** S07-002 (XP)
 **Описание:** Общие челленджи для всех пользователей.
 **Действия:**
@@ -41,17 +40,17 @@
 **Файлы:**
 - `src/app/(main)/challenges/page.tsx` [NEW]
 - `src/components/social/ChallengeCard.tsx` [NEW]
-- `supabase/migrations/015_teams.sql` — seed challenges
+- `supabase/migrations/017_teams_social.sql` — seed challenges
 **Критерии приёмки:**
-- [ ] Страница с активными челленджами
-- [ ] Можно присоединиться к челленджу
-- [ ] Прогресс отслеживается автоматически
-- [ ] Топ-3 получают бонус XP
+- [x] Страница с активными челленджами
+- [x] Можно присоединиться к челленджу
+- [x] Прогресс отслеживается автоматически
+- [x] Топ-3 получают бонус XP
 
 ---
 
 ## S14-003: Discussion Feed
-**Статус:** [ ]
+**Статус:** [x]
 **Зависимости:** S13-001
 **Описание:** Лента обсуждений по стадиям.
 **Действия:**
@@ -62,20 +61,20 @@
 - Upvote/downvote + reply count
 - AI может отвечать (optional toggle)
 **Файлы:**
-- `supabase/migrations/015_teams.sql` — discussions tables
+- `supabase/migrations/017_teams_social.sql` — discussions tables
 - `src/app/(main)/community/page.tsx` [NEW]
 - `src/components/social/DiscussionPost.tsx` [NEW]
 - `src/components/social/ReplyThread.tsx` [NEW]
 **Критерии приёмки:**
-- [ ] Можно создать пост с привязкой к стадии
-- [ ] Upvote работает (1 на пост от пользователя)
-- [ ] Replies с thread view
-- [ ] Фильтр по стадии
+- [x] Можно создать пост с привязкой к стадии
+- [x] Upvote работает (1 на пост от пользователя)
+- [x] Replies с thread view
+- [x] Фильтр по стадии
 
 ---
 
 ## S14-004: Study Groups (Когорты)
-**Статус:** [ ]
+**Статус:** [x]
 **Зависимости:** S14-003
 **Описание:** Группы по 5-7 человек, проходят стадии вместе.
 **Действия:**
@@ -86,11 +85,11 @@
 - Групповой прогресс: средний Score всех участников
 - Групповые milestone celebrations (когда вся группа завершает стадию)
 **Файлы:**
-- `supabase/migrations/015_teams.sql` — study groups tables
+- `supabase/migrations/017_teams_social.sql` — study groups tables
 - `src/app/(main)/groups/page.tsx` [NEW]
 - `src/components/social/GroupCard.tsx` [NEW]
 **Критерии приёмки:**
-- [ ] Можно создать группу и пригласить по ссылке
-- [ ] Max 7 человек в группе
-- [ ] Общий прогресс видим всем участникам
-- [ ] Групповой чат (или discussion thread)
+- [x] Можно создать группу и пригласить по ссылке
+- [x] Max 7 человек в группе
+- [x] Общий прогресс видим всем участникам
+- [x] Групповой чат (или discussion thread)

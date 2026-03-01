@@ -10,6 +10,10 @@ import {
     Trophy,
     Award,
     Globe,
+    MessagesSquare,
+    Users,
+    Swords,
+    UsersRound,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +22,10 @@ const navItems = [
     { href: "/workspace", label: "Workspace", icon: Wrench },
     { href: "/learning", label: "Learning", icon: BookOpen },
     { href: "/discover", label: "Галерея", icon: Globe },
+    { href: "/community", label: "Сообщество", icon: MessagesSquare },
+    { href: "/match", label: "Со-основатель", icon: Users },
+    { href: "/challenges", label: "Челленджи", icon: Swords },
+    { href: "/groups", label: "Группы", icon: UsersRound },
     { href: "/gamification", label: "Достижения", icon: Award },
     { href: "/leaderboard", label: "Лидерборд", icon: Trophy },
 ];

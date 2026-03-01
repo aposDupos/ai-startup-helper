@@ -6,9 +6,8 @@ import {
     LayoutDashboard,
     MessageCircle,
     Wrench,
-    BookOpen,
-    Award,
     Globe,
+    MessagesSquare,
 } from "lucide-react";
 
 const navItems = [
@@ -16,7 +15,7 @@ const navItems = [
     { href: "/chat", label: "Chat", icon: MessageCircle },
     { href: "/workspace", label: "Work", icon: Wrench },
     { href: "/discover", label: "Галерея", icon: Globe },
-    { href: "/gamification", label: "Достижения", icon: Award },
+    { href: "/community", label: "Сообщество", icon: MessagesSquare },
 ];
 
 export function BottomNav() {
